@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>SecurityArts Quantum Manager</title>
+		<link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+		<link rel="stylesheet" href="../node_modules/photonkit/dist/css/photon.css">
+		<link rel="stylesheet" href="../node_modules/toastr/build/toastr.css">
+		<link rel="stylesheet" href="css/style.css">
+				
+		<script rel="stylesheet" href="../node_modules/photonkit/dist/template-app/js/menu.js"></script>
+	</head>
+	
+	<body>
+		<div class="window app-border">
+		
+			<header id="app_header_toolbar" class="toolbar toolbar-header draggable app-title toolbar_focused" style="height: 32px;">
+				<img class="app-icon" src="img/icon32x32.png" width="32">
+				<span class="app-title">SecurityArts Quantum Manager</span>
+				
+				<div id="title-bar-btns">
+					<button id="max-btn"><div class="image"></div></button>
+					<button id="min-btn"><div class="image"></div></button>
+					<button id="close-btn"><div class="image"></div></button>
+				</div>
+
+			</header>
+			
+			<div class="window-content">
+				<div class="pane-group">
+					<div class="pane pane-sm sidebar">
+						<nav class="nav-group">
+						
+							<li class="nav-group-item">
+								<a class="nav-link" href="#" onclick="generalSelect()" style="height: 40px">
+									<div class="row">
+										<div class="col-sm-1 nav-image">
+											<img src="img/icon-home.svg" width="26">
+										</div>
+										<div class="col-sm-10 nav-text">
+											General
+										</div>
+									</div>
+								</a>
+							</li>
+							
+							<li class="nav-group-item">
+								<a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#listPasswords" data-parent="#exampleAccordion"  style="height: 40px">
+									<div class="row">
+										<div class="col-sm-1 nav-image">
+											<img src="img/icon-passwords.svg" width="22">
+										</div>
+										<div class="col-sm-10 nav-text">
+											Passwords
+										</div>
+									</div>
+								</a>
+
+								<ul class="sidenav-second-level collapse" id="listPasswords"></ul>
+							</li>
+							
+							<li class="nav-group-item">
+								<a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#listWallets" data-parent="#exampleAccordion"  style="height: 40px">
+									<div class="row">
+										<div class="col-sm-1 nav-image">
+											<img src="img/icon-wallets.svg" width="22">
+										</div>
+										<div class="col-sm-10 nav-text">
+											Wallets
+										</div>
+									</div>
+								</a>
+
+								<ul class="sidenav-second-level collapse" id="listWallets"></ul>
+							</li>
+							
+							<li class="nav-group-item">
+								<a class="nav-link" href="#" onclick="marketDataSelect()" style="height: 40px">
+									<div class="row">
+										<div class="col-sm-1 nav-image">
+											<img src="img/icon-chart.svg" width="22">
+										</div>
+										<div class="col-sm-10 nav-text">
+											Market Data
+										</div>
+									</div>
+								</a>
+							</li>
+							
+							<li class="nav-group-item">
+								<a class="nav-link" href="#" onclick="settingsSelect()" style="height: 40px">
+									<div class="row">
+										<div class="col-sm-1 nav-image">
+											<img src="img/icon-settings.svg" width="22">
+										</div>
+										<div class="col-sm-10 nav-text">
+											Settings
+										</div>
+									</div>
+								</a>
+							</li>
+							
+						</nav>
+					</div>
+
+					<!--MAIN block-->
+					<div class="pane">
+						<div class="main-panel ps-container ps-theme-default ps-active-y">
+							<div class="content">
+								<div class="container-fluid">
+									<div class="row">
+										<div class="col-sm-12 nopadding">
+											<div style="min-height: 500px;">
+
+												<div class="card-body">
+													<div id="section_wait" class="">
+														<div class="lds-ring">
+															<div></div>
+															<div></div>
+															<div></div>
+															<div></div>
+														</div>
+													</div>
+													
+													<div id="section_general" class="hide">
+													
+														<img src="img/front.png" width="296">
+														<br><br>
+														<button type="button" onclick="generalAddUser()" class="btn btn-info">Add user</button>
+														<button type="button" onclick="generalUpdate()" class="btn btn-info">Check for updates</button>
+														&nbsp&nbsp&nbsp&nbsp&nbsp
+														<button type="button" onclick="generalAbout()" class="btn btn-info">About</button>
+														
+														<br><br>
+														<div class="form-group row">
+															<div class="col-sm-3"><span class="panel-text">User name</span></div>
+															<div class="col-sm-9"><span id="gen_user_name" class="panel-value"></span></div>
+															
+															<div class="col-sm-3"><span class="panel-text">Admin rights</span></div>
+															<div class="col-sm-9"><span id="gen_is_admin" class="panel-value"></span></div>
+															
+															<div class="col-sm-3"><span class="panel-text">Wallets count</span></div>
+															<div class="col-sm-9"><span class="panel-value""><span id="gen_wallets_count">0</span> of <span id="gen_wallets_max">0</span></span></div>
+															
+															<div class="col-sm-3"><span class="panel-text">Passwords count</span></div>
+															<div class="col-sm-9"><span class="panel-value""><span id="gen_passwords_count">0</span> of <span id="gen_passwords_max">0</span></span></div>
+															
+															<div class="col-sm-3"><span class="panel-text">Firmware version</span></div>
+															<div class="col-sm-9"><span id="gen_fw_ver" class="panel-value"></span></div>
+															
+															<!--div class="col-sm-3"><span class="panel-text">Bootloader version</span></div>
+															<div class="col-sm-9"><span id="gen_boot_ver" class="panel-value"></span></div-->
+														</div>
+													</div>
+
+													<div id="section_wallets" class="hide">
+														<form>
+															<div class="form-group row">
+																<div class="col-sm-10">
+																	<div class="form-group row">
+
+																		<div class="col-sm-1"><span class="panel-text">Name</span></div>
+																		<div class="col-sm-11"></span><span id="wallet_name" class="panel-value"></span></div>
+																			
+																		<div class="col-sm-1"><span class="panel-text">Type</span></div>
+																		<div class="col-sm-11"><span id="wallet_type" class="panel-value"></span></div>
+
+																		<div class="col-sm-1"><span class="panel-text">Balance</span></div>
+																		<div class="col-sm-11"><span id="wallet_balance" class="panel-value"></span></div>
+
+																		<div class="col-sm-1"><span class="panel-text">Addr</span></div>
+																		<div class="col-sm-11"><span id="wallet_addr" class="panel-value" onclick="walletCopyAddr()"></span></div>
+																	</div>
+																</div>
+
+																<div class="col-sm-1">
+																	<img id="wallet_img" src="img/none.png" style="float: right;" width="64">
+																</div>
+																
+																<div class="col-sm-1">
+																	<svg width="64px" height="64px" id="wallet_viewbox" viewbox="0 0 32 32" style="float: right;">
+																		<path id="wallet_qr" d=""/>
+																	</svg>
+																</div>
+															</div>
+														</form>
+
+														<div class="form-group row">
+															<div class="col-sm-1">
+																<label class="col-form-label"><span class="panel-text">Address</span></label>
+															</div>
+															<div class="col-sm-11">
+																<input type="text" class="form-control form-control-sm" id="wallet_send_addr" placeholder="Enter receiver address">
+															</div>
+														</div>
+
+														<div class="form-group row">
+															<div class="col-sm-1">
+																<label class="col-form-label"><span class="panel-text">Amount</span></label>
+															</div>
+															
+															<div class="col-sm-6">
+																<div class="input-group input-group-sm mb-3">
+																	<input id="wallet_send_amount_btc" type="text" class="form-control form-control-sm" placeholder="Enter BTC amount" aria-label="Enter BTC amount">
+																	<div class="input-group-append">
+																		<span class="input-group-text" id="wallet_send_coin_type">BTC</span>
+																	</div>
+																</div>
+															</div>
+
+															<div class="col-sm-5">
+																<div class="input-group input-group-sm mb-3">
+																	<input id="wallet_send_amount_usd" type="text" class="form-control form-control-sm" placeholder="Enter USD amount" aria-label="Enter USD amount">
+																	<div class="input-group-append">
+																		<span class="input-group-text">USD</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="form-group row">
+															<div class="col-sm-1">
+																<label class="col-form-label"><span class="panel-text">Fee</span></label>
+															</div>
+															
+															<div class="col-sm-6">
+																<div class="input-group input-group-sm mb-3">
+																	<input id="wallet_send_fee" type="text" class="form-control form-control-sm" placeholder="Enter fee" aria-label="Enter fee">
+																	<div class="input-group-append">
+																		<span class="input-group-text" id="wallet_send_fee_type">sat/Byte</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div id="section_wallet_key" class="hide" style="padding: 0px;">
+															<span class="panel-text" id="wallet_key_wif_name">WIF: </span><span id="wallet_key_wif" class="panel-value" onclick="walletCopyWif()"></span>
+															<span class="panel-text" id="wallet_key_hex_name"><br>HEX: </span><span id="wallet_key_hex" class="panel-value" onclick="walletCopyHex()"></span>
+															<span class="panel-text" id="wallet_key_seed_name"><br>SEED: </span><span id="wallet_key_seed" class="panel-value" onclick="walletCopySeed()"></span>
+															<br><br>
+														</div>
+
+														<div class="form-group row">
+															
+															<div class="col-sm-3">
+																<button type="button" onclick="walletSend()"     		id="wallet_send_btn"  class="btn btn-info">Send</button>
+																<button type="button" onclick="walletBlockExplorer()"	id="wallet_send_btn"  class="btn btn-info">Block Explorer</button>
+															</div>
+
+															<div class="col-sm-5">
+																<button type="button" onclick="walletDelete()"   id="wallet_del_btn"  class="btn btn-danger">Delete wallet</button>
+																<button type="button" onclick="walletShowData()" id="wallet_show_btn" class="btn btn-danger">Show wallet key</button>
+															</div>
+														</div>
+													</div>
+
+													<div id="section_passwords" class="hide">
+														<span class="panel-text">Name: </span><span id="password_name" class="panel-value"></span>
+														<span class="panel-text"><br>Password: </span><span id="password_pass" class="panel-value" onclick="passwordCopyKey()"></span>
+														<span class="panel-text"><br>Type 2FA: </span><span id="password_2fa" class="panel-value"></span>
+														<br><br>
+														
+														<div class="form-group row">
+															<div class="col-sm-4">
+																<button type="button" onclick="passwordShowData()"	class="btn btn-info">Show password</button>
+																<button type="button" onclick="passwordClipBoard()" class="btn btn-info">Copy to clipboard</button>
+															</div>
+															
+															<div class="col-sm-5">
+																<button type="button" onclick="passwordTwoFA()"		class="btn btn-info" id="password_2fa_btn">Delete 2FA</button>
+																<button type="button" onclick="passwordDelete()"	class="btn btn-danger">Delete password</button>
+															</div>
+														</div>
+														
+														<br>
+														<div class="form-group row">
+															<div class="col-sm-12">
+																<svg width="256px" height="256px" id="password_viewbox" viewbox="0 0 32 32" style="opacity: 0.8">
+																	<path id="password_qr" d=""/>
+																</svg>
+															</div>
+														</div>
+														
+													</div>
+
+													<div id="section_settings" class="hide">
+														<div class="form-row">
+															<div class="col">
+																<label for="settings_lang" class="panel-text">Language</label>
+																<select class="form-control form-control-sm" id="settings_lang">
+																	<option value="0">English</option>
+																	<option value="1">Українська</option>
+																</select>
+															</div>
+
+															<div class="col">
+																<label for="settings_def_mode" class="panel-text">Default mode</label>
+																<select class="form-control form-control-sm" id="settings_def_mode">
+																	<option value="0">MENU mode</option>
+																	<option value="1">PC mode</option>
+																</select>
+															</div>
+
+															<div class="col">
+																<label for="settings_rotate_lcd" class="panel-text">Rotate LCD</label>
+																<select class="form-control form-control-sm" id="settings_rotate_lcd">
+																	<option value="0">No</option>
+																	<option value="1">Yes</option>
+																</select>
+															</div>
+														</div>
+
+														<br>
+														<div class="form-row">
+															<div class="col-sm-4">
+																<div class="form-group">
+																	<label for="settings_auto_logout" class="panel-text">Auto logout</label>
+																	<input type="number" id="settings_auto_logout" class="form-control form-control-sm" required="required" maxlength="5">
+																</div>
+															</div>
+
+															<div class="col-sm-4">
+																<div class="form-group">
+																	<label for="settings_screensaver" class="panel-text">Screen saver</label>
+																	<input type="number" id="settings_screensaver" class="form-control form-control-sm" required="required" maxlength="5">
+																</div>
+															</div>
+
+															<div class="col-sm-4">
+																<div class="form-group">
+																	<label for="settings_print_delay" class="panel-text">Print delay</label>
+																	<input type="number" id="settings_print_delay" class="form-control form-control-sm" required="required" maxlength="5">
+																</div>
+															</div>
+														</div>
+
+														<br>
+														<div class="form-row">
+															<div class="col-sm-8">
+																<button type="button" onclick="settingsGet()" class="btn btn-info">Get settings</button>
+																<button type="button" onclick="settingsSet()" class="btn btn-info">Set settings</button>
+															</div>
+
+															<div class="col-sm-4">
+																<button type="button" onclick="settingsBackup()"   class="btn btn-info">Backup</button>
+																<button type="button" onclick="settingsRestore()"  class="btn btn-info">Restore</button>
+																<button type="button" onclick="settingsClearMem()" class="btn btn-danger">Clear memory</button>
+															</div>
+														</div>
+													</div>
+													
+													<div id="section_market" class="hide">
+														
+														<table class="table-striped" id="table_market_data">
+															<thead>
+																<tr>
+																	<th>#</th>
+																	<th><a href="#" onclick="marketSortName()"   style="color: #333333"><div>Name</div></a></th>
+																	<th><a href="#" onclick="marketSortSymbol()" style="color: #333333"><div>Symbol</div></a></th>
+																	<th><a href="#" onclick="marketSortPrice()"  style="color: #333333"><div>Price</div></a></th>
+																	<th><a href="#" onclick="marketSortCap()"    style="color: #333333"><div>Market Cap</div></a></th>
+																	<th><a href="#" onclick="marketSortVolume()" style="color: #333333"><div>Volume (24H)</div></a></th>
+																	<th><a href="#" onclick="marketSortChange()" style="color: #333333"><div>Change (24H)</div></a></th>
+																</tr>
+															</thead>
+															<tbody id="table_market_data_body">
+															</tbody>
+														</table>
+														
+													</div>
+													
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			
+			<!-- Modal Yes/No-->
+			<div class="modal fade" id="modal_dialog_yes_no" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_yes_no_title">Modal title</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						<div class="modal-body" id="modal_yes_no_text"></div>
+						<div class="modal-footer">
+							<button type="button" id="modal_yes_no_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_yes_no_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal Yes/No-->
+			
+			
+			<!-- Add user modal -->
+			<div class="modal fade" id="modal_add_user" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_add_user_title">Add new user</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body" id="modal_add_user_text">
+							<div class="form-group">
+								<label for="modal_user_name">User name</label>
+								<input type="text" id="modal_user_name" class="form-control form-control-sm" placeholder="Enter user name" required="required" maxlength="17">
+							</div>
+							
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="checkbox" id="modal_user_admin">
+								<label class="form-check-label" for="modal_user_admin"> with admin rights</label>
+							</div>
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_user_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_user_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Add user modal -->
+			
+			
+			<!-- Add wallet modal -->
+			<div class="modal fade" id="modal_add_wallet" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_add_wallet_title">Add new wallet</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body" id="modal_add_wallet_text">
+							<div class="form-group">
+								<label for="modal_wallet_type">Wallet type</label>
+								<select class="form-control form-control-sm" id="modal_wallet_type">
+									<option>BTC</option>
+									<option>LTC</option>
+									<option>DASH</option>
+									<option>DOGE</option>
+									<option>XSN</option>
+									<option>XRP</option>
+								</select>
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_wallet_name">Wallet name</label>
+								<input type="text" id="modal_wallet_name" class="form-control form-control-sm" placeholder="Enter wallet name" required="required" maxlength="15">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_wallet_key">Private key</label>
+								<input type="text" id="modal_wallet_key" class="form-control form-control-sm" placeholder="Enter private key" required="required" maxlength="300">
+							</div>
+							
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="checkbox" id="modal_wallet_rnd">
+								<label class="form-check-label" for="modal_wallet_rnd"> Generate random wallet</label>
+							</div>
+							
+							<!--div class="form-check form-check-inline">
+								<input class="form-check-input" type="checkbox" id="modal_wallet_segwit">
+								<label class="form-check-label" for="modal_wallet_segwit"> SegWit address</label>
+							</div-->
+							
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="checkbox" id="modal_wallet_testnet">
+								<label class="form-check-label" for="modal_wallet_testnet"> Testnet</label>
+							</div>
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_wallet_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_wallet_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Add wallet modal -->
+			
+			
+			<!-- Modal transaction -->
+			<div class="modal fade" id="modal_transaction" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_transaction_title">Pay</h4>
+						</div>
+						
+						<div class="modal-body">
+						
+							<div class="form-group row">
+								<div class="col-sm-2">Amount</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_amount"></span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">Fee</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_fee"></span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">Remainder</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_balance"></span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">From</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_from"></span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">To</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_to"></span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">Status</div>
+								<div class="col-sm-10 panel-value"><span id="modal_tarnsaction_status">Press OK button on the device to confirm operation</span></div>
+							</div>
+							
+							<div class="form-group row">
+								<div class="col-sm-2">
+									Transaction
+								</div>
+								
+								<div class="col-sm-10">
+									<a data-toggle="collapse" id="modal_tarnsaction_collapse_btn" href="#modal_transaction_collapse" aria-expanded="false" aria-controls="modal_transaction_btc_collapse">
+										
+									</a>
+								</div>
+							</div>
+							
+							<div class="collapse" id="modal_transaction_collapse">
+								<div class="card card-body">
+									<span class="selactable" id="modal_tarnsaction_transaction"></span>
+								</div>
+								<button id="modal_tarnsaction_copy_tx" type="button btn-sm" class="btn btn-info" style="margin-top:10px">Copy to clipboard</button>
+							</div>
+							
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" class="btn btn-info" id="modal_transaction_btn_cancel" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-info" id="modal_transaction_btn_broadcast" onclick="modalTransactionBroadcast()" data-dismiss="modal">Broadcast</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal transaction -->
+			
+			
+			<!-- Add password modal -->
+			<div class="modal fade" id="modal_add_pass" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+					
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_add_pass_title">Add new password</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body">
+							
+							<!-- Password type -->
+							<div class="form-group row">
+								<div class="col-sm-12">
+									<label for="modal_pass_type">Password type</label>
+									<select class="form-control form-control-sm" id="modal_pass_type">
+										<option>Password</option>
+										<option>Random password</option>
+										<option>Login and Password</option>
+										<option>Credit Card 1</option>
+										<option>Credit Card 2</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Password name -->
+							<div class="form-group row">
+								<div class="col-sm-12">
+									<label for="modal_pass_name">Password name</label>
+									<input type="text" id="modal_pass_name" class="form-control form-control-sm" placeholder="Enter password name" required="required" maxlength="20">
+								</div>
+							</div>
+							
+							<!-- Password -->
+							<div id="modal_pass_type_pass">
+								<div class="form-group row">
+									<div class="col-sm-12">
+										<label for="modal_pass_data">Password</label>
+										<input type="text" id="modal_pass_data" class="form-control form-control-sm" placeholder="Enter password" required="required" maxlength="1000">
+									</div>
+								</div>
+							</div>
+							
+							<!-- Random password -->
+							<div class="hide" id="modal_pass_type_rdn">
+								<div class="form-group row">
+									<div class="col-sm-12">
+										<label for="modal_pass_rnd_len">Password length</label>
+										<input type="text" id="modal_pass_rnd_len" class="form-control form-control-sm" placeholder="Enter password length" required="required" maxlength="4">
+									</div>
+								</div>
+								
+								<div class="clearfix">
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="checkbox" id="modal_pass_opt1">
+										<label class="form-check-label" for="modal_pass_opt1">a..z</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="checkbox" id="modal_pass_opt2">
+										<label class="form-check-label" for="modal_pass_opt2">A..Z</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="checkbox" id="modal_pass_opt3">
+										<label class="form-check-label" for="modal_pass_opt3">0..9</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="checkbox" id="modal_pass_opt4">
+										<label class="form-check-label" for="modal_pass_opt4">~!@#$%^&*()-+_=</label>
+									</div>
+								</div>
+							</div>
+							
+							<!-- Login and Password -->
+							<div id="modal_pass_type_log_pass" class="hide">
+								<div class="form-group row">
+									<div class="col-sm-6">
+										<label for="modal_pass_login">Login</label>
+										<input type="text" id="modal_pass_login" class="form-control form-control-sm" placeholder="Enter login" required="required" maxlength="1000">
+									</div>
+
+									<div class="col-sm-6">
+										<label for="modal_pass_data1">Password</label>
+										<input type="text" id="modal_pass_data1" class="form-control form-control-sm" placeholder="Enter password" required="required" maxlength="1000">
+									</div>
+								</div>
+							</div>
+							
+							
+							<!-- Credit Card1 -->
+							<div id="modal_pass_type_credit_card1" class="hide">
+								
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+								
+								<div class="form-group row">
+									<div class="col-sm-6">
+										<label for="modal_pass_card2_num">Card number</label>
+										<input type="text" id="modal_pass_card2_num" class="form-control form-control-sm" placeholder="Enter card number" required="required" maxlength="19">
+									</div>
+
+									<div class="col-sm-3">
+										<label for="modal_pass_card2_date">Expire</label>
+										<input type="text" id="modal_pass_card2_date" class="form-control form-control-sm" placeholder="MMYY" required="required" maxlength="4">
+									</div>
+									
+									<div class="col-sm-3">
+										<label for="modal_pass_card2_cvv">CVV</label>
+										<input type="text" id="modal_pass_card2_cvv" class="form-control form-control-sm" placeholder="000" required="required" maxlength="4">
+									</div>
+								</div>
+							</div>
+							
+							<!-- Credit Card2 -->
+							<div id="modal_pass_type_credit_card2" class="hide">
+								
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+								
+								<div class="form-group row">
+									<div class="col-sm-6">
+										<label for="modal_pass_card1_num">Card number</label>
+										<input type="text" id="modal_pass_card1_num" class="form-control form-control-sm" placeholder="Enter card number" required="required" maxlength="19">
+									</div>
+
+									<div class="col-sm-6">
+										<label for="modal_pass_card1_holder">Card holder</label>
+										<input type="text" id="modal_pass_card1_holder" class="form-control form-control-sm" placeholder="Enter name here" required="required" maxlength="50">
+									</div>
+								</div>
+									
+								<div class="form-group row">
+									<div class="col-sm-3">
+										<label for="modal_pass_card1_date">Expire</label>
+										<input type="text" id="modal_pass_card1_date" class="form-control form-control-sm" placeholder="MMYY" required="required" maxlength="4">
+									</div>
+									
+									<div class="col-sm-3">
+									</div>
+									
+									<div class="col-sm-3">
+										<label for="modal_pass_card1_cvv">CVV</label>
+										<input type="text" id="modal_pass_card1_cvv" class="form-control form-control-sm" placeholder="000" required="required" maxlength="4">
+									</div>
+								</div>
+							</div>
+							
+							<!-- Add enter -->
+							<div class="form-check form-check-inline" id="modal_pass_type_gen_enter">
+								<input class="form-check-input" type="checkbox" id="modal_pass_gen_enter">
+								<label class="form-check-label" for="modal_pass_gen_enter">Add ENTER key</label>								
+							</div>
+							
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_pass_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_pass_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+			<!-- Add password modal -->
+			
+			
+			<!-- Modal add 2FA -->
+			<div class="modal fade" id="modal_add_2fa" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_add_2fa_title">Add 2FA</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="modal_add_2fa_type">2FA Type</label>
+								<select class="form-control form-control-sm" id="modal_add_2fa_type">
+									<option>U2F</option>
+									<option>TOTP</option>
+									<option>HOTP</option>
+								</select>
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_add_2fa_key">2FA Key</label>
+								<input type="text" id="modal_add_2fa_key" class="form-control form-control-sm" placeholder="Enter 2FA key" required="required" maxlength="50">
+							</div>
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_add_2fa_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_add_2fa_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal add 2FA -->
+			
+			
+			<!-- Modal backup -->
+			<div class="modal fade" id="modal_backup" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_backup_title">Backup user data</h4>
+						</div>
+						
+						<div class="modal-body" id="modal_backup_body">
+							<div class="progress" style="height: 30px;">
+								<div id="modal_backup_progress" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 25%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+							</div>
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal backup -->
+						
+			<!-- Modal restore -->
+			<div class="modal fade" id="modal_restore" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_restore_title">Restore user data</h4>
+						</div>
+						
+						<div class="modal-body" id="modal_restore_body">
+							<div class="progress" style="height: 30px;">
+								<div id="modal_restore_progress" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 25%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+							</div>
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal restore -->
+						
+			<!-- Modal wait device -->
+			<div class="modal fade" id="modal_wait_dev" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+					
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_wait_dev_title">Please connect QUANTUM device to PC</h4>
+							<button type="button" onclick="uiClose()" class="close"><span class="icon icon-cancel-squared"></span></button>
+						</div>
+						
+						<div class="modal-body" style="align-items: center; text-align: center;">
+							<img src="img/front.svg" width="300" align="middle">
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal wait device -->
+
+			<!-- Modal wait pin -->
+			<div class="modal fade" id="modal_wait_pin" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_wait_pin_title">Please enter PIN on device</h4>
+							<button type="button" onclick="uiClose()" class="close"><span class="icon icon-cancel-squared"></span></button>
+						</div>
+						
+						<div class="modal-body" style="align-items: center; text-align: center;">
+							<img src="img/pin.svg" width="300" align="middle">
+							<br>1. Use UP/DOWN keys to select symbol
+							<br>2. Use OK/CANCEL to set/erase symbol
+							<br>3. Hold UP and press OK to confirm pin
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal wait pin -->
+			
+			<!-- Modal wait activation -->
+			<div class="modal fade" id="modal_wait_activation" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_wait_activation_title">Please activate device</h4>
+							<button type="button" onclick="uiClose()" class="close"><span class="icon icon-cancel-squared"></span></button>
+						</div>
+						
+						<div class="modal-body" style="align-items: center; text-align: center;">
+							<img src="img/pin.svg" width="300" align="middle">
+							<br><span id="modal_wait_activation_warranty">Warranty perion: unknown</span>
+							<br><h4 style="color:#606060">Activation code <span id="modal_wait_activation_code">------<span></h4>
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal wait activation -->
+						
+			<!-- Modal Kbd/U2F -->
+			<div class="modal fade" id="modal_kbd_u2f" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_kbd_u2f_title">Please switch to PC mode</h4>
+							<button type="button" onclick="uiClose()" class="close"><span class="icon icon-cancel-squared"></span></button>
+						</div>
+						
+						<div class="modal-body" style="align-items: center; text-align: center;">
+							<img id="modal_kbd_u2f_img" src="img/kbd.svg" width="300" align="middle">
+						</div>
+						
+						<div class="modal-footer"></div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal Keyboard -->
+			
+			<!-- Modal update -->
+			<div class="modal fade" id="modal_update" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_update_title">Updating device...</h4>
+						</div>
+						
+						<div class="modal-body" id="modal_update_body">
+							<span id="modal_update_text"></span>
+							<br>
+							<div id="modal_update_progress_bar" class="progress" style="height: 30px;">
+								<div id="modal_update_progress" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 25%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+							</div>
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_update_start" class="btn btn-info">Start</button>
+							<button type="button" id="modal_update_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal update -->
+			
+			
+			<!-- Modal about -->
+			<div class="modal fade" id="modal_about" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_about_title">About</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body" style="align-items: center; text-align: center;">
+							<div class="form-row">
+								<div class="col-sm-4">
+									<img src="icons/256x256.png" width="138" align="middle">
+								</div>
+								
+								<div class="col-sm-8">
+									<br>Security Arts 2018-2019
+									<br>For more information please visit
+									<br><a href="#" onclick="openExternalUrl('https://security-arts.com')">www.security-arts.com</a>
+									<br>Quantum Manager version: <span id="about_version"></span>
+									<br>Device serial:&nbsp<span id="about_serial"></span>
+								</div>
+							</div>
+						</div>
+						
+						<div class="modal-footer">
+							
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal about -->
+			
+			
+			<footer class="toolbar toolbar-footer draggable">
+			</footer>
+		</div>
+		
+
+		<script>
+			$ = window.$ = window.jQuery = require('jquery');
+			window.Popper = require('popper.js');
+			require('bootstrap-material-design');
+			toastr = require('toastr');
+		</script>
+		<script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+		
+		<script src="js/bitcoin-networks.js"></script>
+		<script src="js/modals.js"></script>
+		<script src="js/usbhid.js"></script>
+		<script src="js/manager.js"></script>
+		<script src="js/bitcoin.js"></script>
+		<script src="js/ripple.js"></script>
+		
+	</body>
+</html>

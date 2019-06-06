@@ -1,0 +1,330 @@
+
+/* ----  loading animation  ---- */
+div#section_wait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 92vh;
+}
+.lds-ring {
+	width: 100px;
+	height: 100px;
+}
+
+.lds-ring div {
+	box-sizing: border-box;
+	display: block;
+	position: absolute;
+	width: 100px;
+	height: 100px;
+	margin: 6px;
+	border: 10px solid #EEEEEE;
+	border-radius: 50%;
+	animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+	border-color: #EEEEEE transparent transparent transparent;
+}
+
+.lds-ring div:nth-child(1) {
+	animation-delay: -0.45s;
+}
+
+.lds-ring div:nth-child(2) {
+	animation-delay: -0.3s;
+}
+
+.lds-ring div:nth-child(3) {
+	animation-delay: -0.15s;
+}
+
+@keyframes lds-ring {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+/* ----  loading animation  ---- */
+
+
+
+#max-btn .image, #min-btn .image, #close-btn .image{
+	height:16px;
+	width:16px;
+	margin: 0 auto;
+	background-size: 100% 100%;
+}
+
+#modal_add_pass label, #modal_add_wallet label, #modal_add_user label {
+	margin-bottom: -5px;
+}
+
+#max-btn, #min-btn, #close-btn{
+	cursor: default;
+}
+
+#max-btn .image{
+	background-image: url('../img/maximize_btn_dark.png');
+}
+#min-btn .image{
+	background-image: url('../img/minimize_btn_dark.png');
+}
+#close-btn .image{
+	background-image: url('../img/close_btn_dark.png');
+}
+#max-btn:hover .image{
+	background-image: url('../img/maximize_btn.png');
+}
+#min-btn:hover .image{
+	cursor: default;
+	background-image: url('../img/minimize_btn.png');
+}
+#close-btn:hover .image{
+	cursor: default;
+	background-image: url('../img/close_btn.png');
+}
+
+
+
+
+.draggable {
+	user-select: none;
+	-webkit-app-region: drag;
+}
+
+.selactable {
+	user-select: text;
+	-webkit-user-select: text;
+}
+
+input::placeholder {
+    color: #cacaca !important;
+}
+
+.modal-header {
+	padding: 13px 13px 10px 15px !important;
+}
+
+#title-bar-btns {
+	-webkit-app-region: no-drag;
+	position: fixed;
+	top: 0px;
+	right: 0px;
+	padding-right: 5px;
+}
+
+#title-bar-btns button {
+	height: 33px;
+	width: 26px;
+	background-color: transparent;
+	border: none;
+	color: #808080;
+	font-size: 20px;
+	outline: none;
+	padding: 0px;
+	margin: 0px;
+}
+
+select.form-control:focus {
+	box-shadow: none;
+}
+
+textarea:focus, input:focus, input[type]:focus {
+	border-color: #6db3fb;
+    box-shadow: 0 0px 0px;
+    outline: 0 none;
+}
+
+input.form-control:focus {
+	box-shadow: none;
+}
+
+span#password_pass {
+    word-break: break-word;
+}
+
+
+.no-right-padding {
+	padding-right: 0px;
+}
+
+.no-left-padding {
+	padding-left: 0px;
+}
+
+.no-bottom-margin {
+	margin-bottom: 0px;
+}
+
+.no-size-padding {
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+.modal-content {
+	background-color: #f5f5f5;
+}
+
+.modal-title {
+	color: #606060;
+}
+
+h1, h2, h3, h4, h5, h5{
+	padding: 0px;
+	margin: 0px;
+}
+
+.close, .close:focus {
+	box-shadow: none;
+	outline: none;
+}
+
+.app-title {
+	font-size: 16px;
+	text-align: center;
+	padding: 3px 0;
+	color: #606060;
+}
+
+.app-icon {
+	position: fixed;
+	top: 1px;
+	left: 5px;
+}
+
+.app-border {
+	border: solid #D0D0D0;
+    border-width: 1px;
+}
+
+.toolbar_unfocused {
+	background-image: linear-gradient(to bottom, #e8e6e8 0%, #ffffff 100%);
+}
+
+.toolbar_focused {
+	background-image: linear-gradient(to bottom, #e8e6e8 0%, #eeeeee 100%);
+}
+
+.panel-text {
+	color: #606060;
+}
+
+.panel-value {
+	color: #378197;
+	user-select: text;
+}
+
+.wrapper .main-panel>.content {
+    margin-top: 30px;
+}
+
+.card .card-header.card-header-primary{
+    background: linear-gradient(60deg,#2ccade,#00bcd4) !important;
+}
+
+.card-body .btn.btn-primary{
+    background-color: #00bcd4;
+    border-color: #00bcd4;
+    box-shadow: 0 2px 2px 0 #26B5C7, 0 3px 1px -2px #26B5C7, 0 1px 5px 0 #26B5C7;
+}
+
+.card-body {
+	padding: 0;
+}
+
+#section_general, #section_wallets, #section_settings, #section_passwords {
+	padding: 20px;
+}
+
+.nopadding {
+	padding: 0px;
+}
+
+.hide
+{
+    display: none;
+    /* padding: 10px; */
+}
+.nav-group-item{
+    padding: 0;
+}
+
+.nav-group-item:active, .nav-group-item.active{
+    background-color: transparent;
+}
+
+a.nav-link{
+    padding: 2px 10px 2px 25px;
+	line-height: 40px;
+}
+
+.nav-image{
+	justify-content: center;
+	flex-direction: column;
+	display: flex;
+	width: auto;
+}
+
+.nav-image img{
+	vertical-align: initial;
+}
+
+div.nav-text{
+	width: auto;
+}
+
+#listWallets, #listPasswords {
+	padding: 0;
+	margin: 0;
+}
+
+#listWallets li a, #listPasswords li a {
+	padding: 0 145px 0 40px;
+	height: 100%;
+	display: block;
+	line-height: 1.8;
+}
+
+#listWallets li a:hover, #listPasswords li a:hover  {
+    background-color: #dcdfe1;
+}
+
+.toastr-container {
+	position: absolute;
+	bottom: 23px;
+	width: auto;
+	right: 5px;
+	height: auto;
+}
+
+a.nav-link:hover, a.nav-link:active{
+    background-color: #dcdfe1;
+}
+
+a.nav-link, .sidenav-second-level li a{
+    color: #333;
+}
+
+.sidenav-second-level li a:hover{
+    text-decoration: none;
+    color: #828282;
+}
+
+.sidenav-second-level{
+    list-style-type: none;
+}
+
+.table_tr2 {
+	background-color: #00FF00;
+}
+
+
+@media (max-width: 991px) {
+    .sidebar.custom-sidebar{
+        left: 0;
+        transform: none;
+        transition: none;
+        background-color: #fff !important;
+        box-shadow: 0 16px 38px -12px rgba(0,0,0,.56), 0 4px 25px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(0,0,0,.2);
+    }
+}

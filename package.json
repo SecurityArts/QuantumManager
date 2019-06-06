@@ -1,0 +1,71 @@
+{
+ "name": "QuantumManager",
+ "productName": "Quantum Manager",
+ "author": "SecurityArts",
+ "description": "SecurityArts Quantum Manager",
+ "main": "main.js",
+ "version": "1.0.0",
+ "license": "MIT",
+ "scripts": {
+  "start": "electron .",
+  "postinstall": "electron-builder install-app-deps",
+  "pack": "electron-builder --dir",
+  "dist": "electron-builder"
+ },
+ "build": {
+  "appId": "com.securityarts.manager",
+  "nsis": {
+   "oneClick": false,
+   "perMachine": false,
+   "allowElevation": true,
+   "allowToChangeInstallationDirectory": true,
+   "menuCategory": true,
+   "installerIcon": "build/icon.ico",
+   "uninstallerIcon": "build/icon.ico",
+   "installerHeader": "build/32x32.png",
+   "installerHeaderIcon": "build/32x32.png",
+   "installerSidebar": "installersidebar.bmp",
+   "uninstallerSidebar": "installersidebar.bmp"
+  },
+  "dmg": {
+   "icon": "build/1024x1024.png"
+  },
+  "win": {
+   "target": {
+    "target": "msi",
+    "arch": ["x64"]
+   },
+   "icon": "build/icon.ico",
+   "certificateFile": "build/CodeSignCert.pfx",
+   "certificatePassword": "Gfhjdsyxfr1983"
+  },
+  "mac": {
+   "target": "dmg",
+   "icon": "build/1024x1024.png",
+   "category": "public.app-category.utilities"
+  },
+  "linux": {
+   "target": "appImage",
+   "category": "Utility"
+  }
+ },
+ "devDependencies": {
+  "electron": "^4.0.5",
+  "electron-builder": "^20.40.2"
+ },
+ "dependencies": {
+  "bitcoinjs-lib": "^4.0.3",
+  "bootstrap": "^4.3.1",
+  "bootstrap-material-design": "^4.1.1",
+  "coinselect": "^3.1.11",
+  "jquery": "^3.3.1",
+  "node-hid": "^0.7.6",
+  "photonkit": "^0.1.2",
+  "popper.js": "^1.14.7",
+  "qr-image": "^3.2.0",
+  "ripple-lib": "^1.1.2",
+  "toastr": "^2.1.4",
+  "usb-detection": "^4.1.0",
+  "ws": "^6.1.3"
+ }
+}
