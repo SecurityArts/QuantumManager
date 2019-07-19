@@ -32,6 +32,8 @@ npm run dist
 Project will be built for a platform you are running script from.
 Result will be located at /dist folder.
 
+Or just download build executable for your OS from [download](https://security-arts.com/download) page
+
 ## Supported platforms
  - Windows x64
  - Mac OS x64

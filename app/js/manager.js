@@ -75,19 +75,31 @@ function infoShow(title, content, type, delay) {
 
 //------------------------------------------------  Updates  ---------------------------------------------------------------
 async function uiCheckSoftwareUpdates(localVersion) {
-	$.get('https://security-arts.com/downloads/software.json', {rnd: rnd()}).then((ret) => {
+	$.get('https://security-arts.com/downloads/software', {rnd: rnd()}).then((ret) => {
 		
+		let serverMsg = '';
 		let serverVersion = '0';
 		
 		switch (process.platform) {
-			case 'win32': serverVersion = ret.manager.windows; break;
-			case 'linux': serverVersion = ret.manager.linux; break;
-			case 'darwin': serverVersion = ret.manager.mac; break;
+			case 'win32':
+				serverVersion = ret.manager.windows;
+				serverMsg = ret.manager.windows_msg_eng;
+				break;
+				
+			case 'linux':
+				serverVersion = ret.manager.linux;
+				serverMsg = ret.manager.linux_msg_eng;
+				break;
+				
+			case 'darwin':
+				serverVersion = ret.manager.mac;
+				serverMsg = ret.manager.mac_msg_eng;
+				break;
 		}
 		
 		if (cmpVersions(serverVersion, localVersion)) {
-			infoShow('Software update', `New manager ${serverVersion} version is available.
-			 Please visit WWW.SECURITY-ARTS.COM for updates.`, 'info', '10000');
+			infoShow('Software update', `New Quantum Manager version ${serverVersion} is available.
+			 Please visit www.security-arts.com for updates. ` + serverMsg, 'info', '10000');
 		}
 	});
 }
@@ -97,11 +109,12 @@ async function uiCheckFirmwareUpdates(serial, localVersion) {
 		try{
 			if (ret.code === 0)
 			{
+				let serverMsg = JSON.parse(ret.data).msg_eng || '';
 				let serverVersion = JSON.parse(ret.data).FirmwareVersion || 0;
-
+				
 				if (serverVersion && serverVersion > localVersion) {
 					infoShow('Firmware update', `New firmware version is available for your device.
-				 Please press "Check for updates" button to proceed update.`, 'info', '10000');
+				 Please press "Check for updates" button to proceed update. ` + serverMsg, 'info', '10000');
 				}
 			}
 		} catch (err) {}
@@ -458,7 +471,7 @@ async function generalUpdate() {
 				$('#modal_update_text').text("Press Start to begin update process");
 				$(document).unbind("keyup").keyup((e) => {if (e.which === 13) $("#modal_update_start").click()});
 			} else {
-				$("#modal_update_start").prop("disabled", false);
+				$("#modal_update_start").prop("disabled", true);
 				$('#modal_update_text').text("Device firmware is up to date");
 			}
 
@@ -645,12 +658,85 @@ async function walletSendXrp() {
 	} else infoShow('Error', 'Invalid send address', 'error', 5000);
 }
 
+async function walletSendEth() {
+	let addr = $('#wallet_send_addr').val().trim(); 
+	let gasPrice = $('#wallet_send_fee').val().replace(',', '.').trim();
+	let gasLimit = $('#wallet_gas_limit').val().replace(',', '.').trim();
+	let amount = $('#wallet_send_amount_btc').val().replace(',', '.').trim();
+	let balance = $('#wallet_balance').text().replace(',', '.').trim().split(' ', 2).slice(0,1).toString();
+	let testnet = (wallets.Wallets[walletIndex - 1].Options.Testnet === true);
+	let addrValid = ethereumIsAddressValid(addr);
+	
+	
+	if (addrValid) {
+		amount = ethereumAmount(amount);
+		balance = ethereumAmount(balance);
+		gasPrice = ethereumGasPrice(gasPrice);
+		gasLimit = ethereumFormatGasLimit(gasLimit);
+		let fee = ethereumFee(gasPrice, gasLimit);
+		let feeStr = ethereumFormatAmount(fee);
+		let amountStr = ethereumFormatAmount(amount);
+				
+		if (amount) {
+			if (gasPrice) {
+				if (gasLimit) {
+					if (fee) {
+						if ((fee + amount) <= balance) {
+							
+							let remainderStr = ethereumFormatAmount(balance - (fee + amount));
+							modalTransactionStatus('Getting wallet data, please wait');
+							modalTransactionShow(wallets.Wallets[walletIndex - 1].Addr, addr, amountStr, feeStr, remainderStr, ' ETH');
+							let tx = await ethereumGenerateTransaction(wallets.Wallets[walletIndex - 1].Addr, addr, amount, gasPrice, gasLimit, testnet, 5000);
+							infoHide();
+							
+							if (addrValid < 2) {
+								infoShow('Attention!!!', 'We can\'t verify receiver address. Make sure that you copy/paste or type it correctly', 'warning', 10000)
+							}						
+							
+							if (tx) {
+								modalTransactionStatus('Please press random buttons on device');
+								await initRandom();
+								modalTransactionStatus('Press OK button on device to confirm operation');
+								let ret = await hidSignTransaction(walletIndex, ethereumSerializeTransaction(tx), 'SECP256K1', 1, 1, 60000);
+								
+								if (ret.Signature) {
+									if (ret.Signature.length == 130) {
+										tx = ethereumEncodeTxFinal(tx, ret.Signature, testnet);
+										tx = ethereumSerializeTransaction(tx);
+										
+										modalTransactionTx(tx);
+										modalTransactionEnable();
+										modalTransactionStatus('Transaction signed. Press Broadcast to send to blockchain');
+										
+										if (await modalTransactionWaitConfirm()) {
+											ret = await ethereumPushTx(tx, testnet, 10000);
+											if (ret === true) {
+												infoShow('Success', 'Transaction broadcasted OK', 'success', 5000);
+											} else {
+												infoShow('Error', ret, 'error', 5000);
+											}
+										}
+									} else infoShow('Error', 'Transaction signature error', 'error', 5000);
+								} else infoShow('Error', ret.Error, 'error', 5000);
+							} else infoShow('Error', 'Can\'t get wallet data', 'error', 5000);
+							modalTransactionHide();
+						} else infoShow('Error', 'Wallet balance is to low', 'error', 5000);
+					} else infoShow('Error', 'Invalid transaction price', 'error', 5000);
+				} else infoShow('Error', 'Invalid Gas Limit value', 'error', 5000);
+			} else infoShow('Error', 'Invalid Gas Price value', 'error', 5000);
+		} else infoShow('Error', 'Invalid send amount', 'error', 5000);
+	} else infoShow('Error', 'Invalid send address', 'error', 5000);
+}
+
 async function walletSend() {
 	if (!hidIsBusy()) {
 		switch (wallets.Wallets[walletIndex - 1].Type) {
 			case 'XRP':
 				await walletSendXrp();
 				break;
+			case 'ETH':
+				await walletSendEth();
+				break
 			default:
 				await walletSendBtc();
 				break;
@@ -667,11 +753,18 @@ function walletBlockExplorer() {
 		
 		switch (type) {
 			case 'XRP':
-				openExternalUrl('https://xrpscan.com/account/' + addr);
+				let params1 = walletGetXrpCoinParameters(type, testnet);
+				openExternalUrl(params1.explorer + addr);
 				break;
+				
+			case 'ETH':
+				let params2 = walletGetEthCoinParameters(type, testnet);
+				openExternalUrl(params2.explorer + addr);
+				break;
+				
 			default:
-				let params = walletGetCoinParameters(type, testnet);
-				openExternalUrl(params.explorer + addr);
+				let params3 = walletGetCoinParameters(type, testnet);
+				openExternalUrl(params3.explorer + addr);
 				break;
 		}
 	}
@@ -713,17 +806,15 @@ function walletSelectXRP(index) {
 		let addr = wallets.Wallets[index - 1].Addr;
 		let type = wallets.Wallets[index - 1].Type;
 		let testnet = (wallets.Wallets[index - 1].Options.Testnet === true);
+		let params = walletGetXrpCoinParameters(type, testnet);
 										
 		walletIndex = index;
 		$('#wallet_balance').text('...');
 		$('#wallet_name').text(name);
-		if (testnet) {
-			$('#wallet_type').text('Ripple Testnet');
-		} else {
-			$('#wallet_type').text('Ripple');
-		}
+		$('#wallet_type').text(params.name);
 		$('#wallet_addr').text(addr);
-		$('#wallet_img').attr('src', 'img/xrp.png');
+		$('#wallet_img').attr('src', 'img/' + params.img);
+		$('#wallet_gas_limit_div').hide();
 		
 		q = qr.svgObject(addr, { type: 'svg' });
 		$('#wallet_qr').attr('d', q.path);
@@ -757,10 +848,12 @@ function walletSelectXRP(index) {
 			}
 		});
 										
+		$('#wallet_send_fee').val(Number((params.fee).toFixed(10)));
 		$('#wallet_send_addr').val('');
-		$('#wallet_send_amount_usd').val('');
-		$('#wallet_send_fee_type').text('XRP');
-		$('#wallet_send_coin_type').text('XRP');
+		$('#wallet_send_fee_name').text(params.feeName);
+		$('#wallet_send_fee_type').text(params.feeType);
+		$('#wallet_send_coin_type').text(params.ticker);
+		
 		$('#wallet_send_amount_btc')
 			.val('')
 			.attr('placeholder', 'Enter XRP amount')
@@ -816,6 +909,7 @@ function walletSelectBTC(index) {
 		$('#wallet_type').text(params.name);
 		$('#wallet_addr').text(addr);
 		$('#wallet_img').attr('src', 'img/' + params.img);
+		$('#wallet_gas_limit_div').hide();
 		
 		q = qr.svgObject(addr, { type: 'svg' });
 		$('#wallet_qr').attr('d', q.path);
@@ -841,7 +935,8 @@ function walletSelectBTC(index) {
 										
 		$('#wallet_send_fee').val(Number((params.fee).toFixed(10)));
 		$('#wallet_send_addr').val('');
-		$('#wallet_send_fee_type').text(params.feeName);
+		$('#wallet_send_fee_name').text(params.feeName);
+		$('#wallet_send_fee_type').text(params.feeType);
 		$('#wallet_send_coin_type').text(params.ticker);
 
 		$('#wallet_send_amount_btc')
@@ -884,11 +979,112 @@ function walletSelectBTC(index) {
 	}
 }
 
+function walletSelectETH(index) {
+	if (index && wallets && (wallets.Wallets.length >= index)) {
+		let q;
+		let coinToUsdRate = 0;
+		let name = wallets.Wallets[index - 1].Name;
+		let addr = wallets.Wallets[index - 1].Addr;
+		let type = wallets.Wallets[index - 1].Type;
+		let testnet = wallets.Wallets[index - 1].Options.Testnet === true;
+		let params = walletGetEthCoinParameters(type, testnet);
+										
+		walletIndex = index;
+		$('#wallet_balance').text('...');
+		$('#wallet_name').text(name);
+		$('#wallet_type').text(params.name);
+		$('#wallet_addr').text(addr);
+		$('#wallet_img').attr('src', 'img/' + params.img);
+		$('#wallet_gas_limit_div').show();
+		$('#wallet_gas_limit').val(params.gasLimit);
+		
+		q = qr.svgObject(addr, { type: 'svg' });
+		$('#wallet_qr').attr('d', q.path);
+		$('#wallet_viewbox').attr('viewBox', '0 0 ' + ++q.size + ' ' + q.size);
+														
+		$.get(ethereumApiAddrBalance, {coin: type, addr: addr, testnet: testnet, confirmations: 1, rnd: rnd()}).then((ret) => {
+			ret = Number(ret);
+
+			if (isNaN(ret)) {
+				ret = 0;
+			}
+			walletBalance = ret / 1000000000000000000;
+			$('#wallet_balance').text((ret / 1000000000000000000) + ' ' + params.ticker);
+		});
+		
+		$('#wallet_send_fee').val('');
+		$.get(ethereumApiAddrFee, {coin: type, testnet: testnet, rnd: rnd()}).then((ret) => {
+			ret = Number(ret);
+			if (isNaN(ret)) {
+				ret = 0;
+			}
+			$('#wallet_send_fee').val(Number((ret / 1000000000).toFixed(10)));
+		});
+		
+		coinToUsdRate = 0;
+		$.get(ethereumApiAddrRate, {coin: type, rnd: rnd()}).then((ret) => {
+			ret = Number(ret);
+			if (ret && !isNaN(ret)) {
+				coinToUsdRate = ret;
+			}
+		});
+										
+		$('#wallet_send_fee').val(Number((params.fee).toFixed(10)));
+		$('#wallet_send_addr').val('');
+		$('#wallet_send_fee_type').text(params.feeType);
+		$('#wallet_send_fee_name').text(params.feeName);
+		$('#wallet_send_coin_type').text(params.ticker);
+
+		$('#wallet_send_amount_btc')
+			.val('')
+			.attr('placeholder', 'Enter ' + params.ticker + ' amount')
+			.unbind("input")
+			.on("input", () => {
+				if (coinToUsdRate) {
+					let amount = $('#wallet_send_amount_btc').val();
+					amount = Number(amount.replace(',', '.'));
+
+					if (!isNaN(amount))	{
+						$("#wallet_send_amount_usd").val(Number((amount * coinToUsdRate)).toFixed(5));
+					} else {
+						$("#wallet_send_amount_usd").val('');
+					}
+				}
+			});
+
+		$('#wallet_send_amount_usd')
+			.val('')
+			.unbind("input")
+			.on("input", () => {
+				if (coinToUsdRate) {
+					let amount = $('#wallet_send_amount_usd').val();
+					amount = Number(amount.replace(',', '.'));
+
+					if (!isNaN(amount)) {
+						$("#wallet_send_amount_btc").val(Number((amount / coinToUsdRate)).toFixed(5));
+					} else {
+						$("#wallet_send_amount_btc").val('');
+					}
+				}
+		});
+										
+		$('#section_wallet_key').hide();
+		uiShowSection('wallets');
+	} else {
+		generalSelect();
+	}
+}
+
+
 function walletSelect(index) {
 	if (index && wallets && (wallets.Wallets.length >= index)) {
 		switch (wallets.Wallets[index - 1].Type) {
 			case 'XRP':
 				walletSelectXRP(index);
+				break;
+				
+			case 'ETH':
+				walletSelectETH(index);
 				break;
 			
 			default:
@@ -968,6 +1164,7 @@ async function walletShowData() {
 			let wallet = await hidGetWalletData(walletIndex, 40000);
 			infoHide();
 											
+			$('#wallet_key_wif').show();
 			$('#wallet_key_wif_name').show();
 			$('#wallet_key_hex_name').show();
 			$('#wallet_key_seed_name').show();
@@ -979,6 +1176,11 @@ async function walletShowData() {
 						$('#wallet_key_wif_name').text('SECRET: ');
 						if (!wallet.Seed) $('#wallet_key_seed_name').hide();
 						if (!wallet.Secret) $('#wallet_key_wif_name').hide();
+						break;
+						
+					case 'ETH':
+						$('#wallet_key_wif').hide();
+						$('#wallet_key_wif_name').hide();
 						break;
 					
 					default:

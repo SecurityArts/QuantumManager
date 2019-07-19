@@ -371,7 +371,7 @@ async function modalAddWallet() {
 	return new Promise((resolve) => {
 		let ret = false;
 		let segwit = ['BTC'];
-		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'XRP', 'ZEC'];
+		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'XRP', 'ZEC', 'ETH'];
 										
 		$("#modal_wallet_key")
 			.val("")
@@ -537,6 +537,7 @@ function modalTransactionBroadcast() {
 }
 
 function modalTransactionHide() {
+	modalTransactionConfirm = false;
 	modalTransactionVisible = false;
 	$('#modal_transaction').modal('hide');
 }

@@ -12,6 +12,17 @@ const rippleApiAddrUnspent =	'https://wallet.security-arts.com/api/unspent/';
 const rippleApiAddrBalance =	'https://wallet.security-arts.com/api/addressbalance/';
 
 
+const coinPrmXrp = 			{name: 'Ripple',			ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee', feeName: 'XRP',		img: 'xrp.png',		explorer: 'https://xrpscan.com/account/'};
+const coinPrmXrpTestNet = 	{name: 'Ripple Testnet',	ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee',	feeName: 'XRP',		img: 'xrp.png',		explorer: 'https://xrpscan.com/account/'};
+const coinPrmXrpUnknown =	{name: 'Unknown',			ticker: '',		fee: 0,			feeType: '',	feeName: '',		img: 'none.png',	explorer: 'https://google.com/search?q='};
+
+const walletGetXrpCoinParameters = (coin, testnet) => {
+	switch (coin) {
+		case 'XRP': if (testnet) return coinPrmXrpTestNet; else return coinPrmXrp; break;
+	}
+	return coinPrmXrpUnknown;
+};
+
 function rippleEncodeTxFinal(tx) {
 	return rippleBinary.encode(tx);
 }

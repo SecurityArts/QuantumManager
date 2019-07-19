@@ -4,7 +4,7 @@
  "author": "SecurityArts",
  "description": "SecurityArts Quantum Manager",
  "main": "main.js",
- "version": "1.0.0",
+ "version": "1.0.1",
  "license": "MIT",
  "scripts": {
   "start": "electron .",
@@ -33,7 +33,9 @@
   "win": {
    "target": {
     "target": "msi",
-    "arch": ["x64"]
+    "arch": [
+     "x64"
+    ]
    },
    "icon": "build/icon.ico",
    "certificateFile": "build/CodeSignCert.pfx",
@@ -54,10 +56,15 @@
   "electron-builder": "^20.40.2"
  },
  "dependencies": {
+  "big-integer": "^1.6.44",
+  "big.js": "^5.2.2",
   "bitcoinjs-lib": "^4.0.3",
   "bootstrap": "^4.3.1",
   "bootstrap-material-design": "^4.1.1",
   "coinselect": "^3.1.11",
+  "ethereumjs-common": "^1.2.1",
+  "ethereumjs-tx": "^2.0.0",
+  "ethereumjs-util": "^6.1.0",
   "jquery": "^3.3.1",
   "node-hid": "^0.7.6",
   "photonkit": "^0.1.2",
@@ -66,6 +73,7 @@
   "ripple-lib": "^1.1.2",
   "toastr": "^2.1.4",
   "usb-detection": "^4.1.0",
+  "web3": "^1.0.0-beta.55",
   "ws": "^6.1.3"
  }
 }
