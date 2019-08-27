@@ -39,6 +39,7 @@ function jsonToArray(json) {
 
 function arrayToJson(str) {
 	str = str.map((item) => String.fromCharCode(item)).join('');
+	
 	try {
 		return JSON.parse(str);
 	} catch(e) {
@@ -368,25 +369,27 @@ async function hidInitChannel(timeout) {
 }
 
 async function hidCommand(data, timeout) {
-	commandInProgress = true;
+	if (!commandInProgress) {
+		commandInProgress = true;
 
-	if (hidSend(data, channelId, typeData)) {
-		let ret;
-		
-		try {
-			ret = await hidRead(timeout);
-		} catch (err) {
-			commandInProgress = false;
-			return false;
+		if (hidSend(data, channelId, typeData)) {
+			let ret;
+			
+			try {
+				ret = await hidRead(timeout);
+			} catch (err) {
+				commandInProgress = false;
+				return false;
+			}
+			
+			if (ret.cid === channelId && ret.type === typeData) {
+				commandInProgress = false;
+				return ret.data;
+			}
 		}
 		
-		if (ret.cid === channelId && ret.type === typeData) {
-			commandInProgress = false;
-			return ret.data;
-		}
+		commandInProgress = false;
 	}
-	
-	commandInProgress = false;
 	return false;
 }
 //-------------------------------------  Low level USB HID functions  -----------------------------------------------------
@@ -478,6 +481,27 @@ async function hidAddPassword(name, pass, random, symbols, timeout) {
     }
 
     let ret = await hidCommand(jsonToArray(cmd), timeout);
+
+	if (ret) {
+		return arrayToJson(ret);
+    }
+
+	return { Error: 'USB command error' };
+}
+
+async function hidGet2FA(index, timeout) {
+	let epoch = Math.round(new Date().getTime() / 1000.0);
+	let ret = await hidCommand(jsonToArray({ Command: "Get2FA", Index: index, Time: epoch, CmdId: rnd() }), timeout);
+
+	if (ret) {
+		return arrayToJson(ret);
+    }
+
+	return { Error: 'USB command error' };
+}
+
+async function hidInc2FA(index, timeout) {
+	let ret = await hidCommand(jsonToArray({ Command: "Inc2FA", Index: index, CmdId: rnd() }), timeout);
 
 	if (ret) {
 		return arrayToJson(ret);

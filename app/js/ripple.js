@@ -73,6 +73,7 @@ async function rippleGenerateTransaction(addrFrom, addrTo, pubKey, amount, fee, 
 
 async function ripplePushTx(tx, testnet, timeout) {
 	return new Promise((resolve) => {
+		
 		let tmr = setTimeout(() => resolve('Server respone timeout'), timeout);
 	
 		$.post(bitcoinApiAddrPushTx, {coin: "XRP", tx: tx, testnet: testnet}).done((result) => {
@@ -82,10 +83,10 @@ async function ripplePushTx(tx, testnet, timeout) {
 			if (result) {
 				if (result.result) {
 					ret = true;
-				}
-
-				if (result.error) {
-					ret = ret.error;
+				} else {
+					if (result.error) {
+						ret = result.error;
+					}
 				}
 			} 
 			
@@ -94,5 +95,5 @@ async function ripplePushTx(tx, testnet, timeout) {
 			clearTimeout(tmr);
 			resolve('Server respone error');
 		});
-	});
-}
+	}).catch(() => null);
+};

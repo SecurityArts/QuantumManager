@@ -265,18 +265,46 @@
 													</div>
 
 													<div id="section_passwords" class="hide">
-														<span class="panel-text">Name: </span><span id="password_name" class="panel-value"></span>
-														<span class="panel-text"><br>Password: </span><span id="password_pass" class="panel-value" onclick="passwordCopyKey()"></span>
-														<span class="panel-text"><br>Type 2FA: </span><span id="password_2fa" class="panel-value"></span>
-														<br><br>
+														<div class="form-group row">
+															<div class="col-sm-1"><span class="panel-text">Name</span></div>
+															<div class="col-sm-11"></span><span id="password_name" class="panel-value"></span></div>
+																			
+															<div class="col-sm-1"><span class="panel-text" id="password_login_text">Login</span></div>
+															<div class="col-sm-11"><span id="password_login" class="panel-value" onclick="passwordCopyLogin()"></span></div>
+
+															<div class="col-sm-1"><span class="panel-text">Password</span></div>
+															<div class="col-sm-11"><span id="password_pass" class="panel-value" onclick="passwordCopyPass()"></span></div>
+
+															<div class="col-sm-1"><span class="panel-text" id="password_url_text">URL</span></div>
+															<div class="col-sm-11"><span id="password_url" class="panel-value" onclick="passwordCopyUrl()"></span></div>
+															
+															<div class="col-sm-1"><span class="panel-text">Type&nbsp2FA</span></div>
+															<div class="col-sm-11"><span id="password_2fa" class="panel-value"></span></div>
+															
+															<div class="col-sm-1"><span id="password_2fa_code1" class="panel-text">Code&nbsp2FA</span></div>
+															<div class="col-sm-1"><span id="password_2fa_code2" class="panel-value" onclick="passwordCopy2FA()"></span></div>
+															
+															<div class="col-sm-1" id="password_2fa_pb" style="padding: 5px">
+																<div class="progress" style="height: 7px;">
+																	<div id="password_2fa_time" class="progress-bar bg-warning" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 50%"></div>
+																</div>
+															</div>
+															
+															<div class="col-sm-1" id="password_2fa_inc" style="margin-top: -4px">
+																<button type="button" onclick="password2faInc()" class="btn btn-outline-info btn-sm">Increment</button>
+															</div>
+														</div>
 														
+														<br>
 														<div class="form-group row">
 															<div class="col-sm-4">
-																<button type="button" onclick="passwordShowData()"	class="btn btn-info">Show password</button>
-																<button type="button" onclick="passwordClipBoard()" class="btn btn-info">Copy to clipboard</button>
+																<button type="button" onclick="passwordShowData()" class="btn btn-info">Show password</button>
+																<button type="button" onclick="passwordCopyClpBrd()" id="password_copy" class="btn btn-info">Copy to clipboard</button>
+																<button type="button" onclick="passwordOpenURL()" id="password_url_open" class="btn btn-info">Open URL</button>
 															</div>
 															
 															<div class="col-sm-5">
+																<button type="button" onclick="passwordGet2FA()"	class="btn btn-info" id="password_2fs_show">Show 2FA code</button>
 																<button type="button" onclick="passwordTwoFA()"		class="btn btn-info" id="password_2fa_btn">Delete 2FA</button>
 																<button type="button" onclick="passwordDelete()"	class="btn btn-danger">Delete password</button>
 															</div>
@@ -294,69 +322,98 @@
 													</div>
 
 													<div id="section_settings" class="hide">
-														<div class="form-row">
-															<div class="col">
-																<label for="settings_lang" class="panel-text">Language</label>
-																<select class="form-control form-control-sm" id="settings_lang">
-																	<option value="0">English</option>
-																	<option value="1">Українська</option>
-																</select>
-															</div>
+														
+														<ul class="nav nav-tabs" role="tablist">
+															<li class="nav-item">
+																<a class="nav-link active" id="device_settings_tab" data-toggle="tab" href="#device_settings" role="tab" aria-selected="true">Device settings</a>
+															</li>
+															<li class="nav-item">
+																<a class="nav-link"        id="manager_settings_tab" data-toggle="tab" href="#manager_settings" role="tab" aria-selected="false">Manager settings</a>
+															</li>
+														</ul>
+														
+														<div class="tab-content" style="padding-top: 15px">
+															<div class="tab-pane fade show active" id="device_settings" role="tabpanel" aria-labelledby="device_settings_tab">
+																<div class="form-row">
+																	<div class="col">
+																		<label for="settings_lang" class="panel-text" style="margin-bottom: -5px">Language</label>
+																		<select class="form-control form-control-sm" id="settings_lang">
+																			<option value="0">English</option>
+																			<option value="1">Українська</option>
+																		</select>
+																	</div>
 
-															<div class="col">
-																<label for="settings_def_mode" class="panel-text">Default mode</label>
-																<select class="form-control form-control-sm" id="settings_def_mode">
-																	<option value="0">MENU mode</option>
-																	<option value="1">PC mode</option>
-																</select>
-															</div>
+																	<div class="col">
+																		<label for="settings_def_mode" class="panel-text" style="margin-bottom: -5px">Default mode</label>
+																		<select class="form-control form-control-sm" id="settings_def_mode">
+																			<option value="0">MENU mode</option>
+																			<option value="1">PC mode</option>
+																		</select>
+																	</div>
 
-															<div class="col">
-																<label for="settings_rotate_lcd" class="panel-text">Rotate LCD</label>
-																<select class="form-control form-control-sm" id="settings_rotate_lcd">
-																	<option value="0">No</option>
-																	<option value="1">Yes</option>
-																</select>
-															</div>
-														</div>
+																	<div class="col">
+																		<label for="settings_rotate_lcd" class="panel-text" style="margin-bottom: -5px">Rotate LCD</label>
+																		<select class="form-control form-control-sm" id="settings_rotate_lcd">
+																			<option value="0">No</option>
+																			<option value="1">Yes</option>
+																		</select>
+																	</div>
+																</div>
 
-														<br>
-														<div class="form-row">
-															<div class="col-sm-4">
-																<div class="form-group">
-																	<label for="settings_auto_logout" class="panel-text">Auto logout</label>
-																	<input type="number" id="settings_auto_logout" class="form-control form-control-sm" required="required" maxlength="5">
+																<br>
+																<div class="form-row">
+																	<div class="col-sm-4">
+																		<div class="form-group">
+																			<label for="settings_auto_logout" class="panel-text" style="margin-bottom: -5px">Auto logout</label>
+																			<input type="number" id="settings_auto_logout" class="form-control form-control-sm" required="required" maxlength="5">
+																		</div>
+																	</div>
+
+																	<div class="col-sm-4">
+																		<div class="form-group">
+																			<label for="settings_screensaver" class="panel-text" style="margin-bottom: -5px">Screen saver</label>
+																			<input type="number" id="settings_screensaver" class="form-control form-control-sm" required="required" maxlength="5">
+																		</div>
+																	</div>
+
+																	<div class="col-sm-4">
+																		<div class="form-group">
+																			<label for="settings_print_delay" class="panel-text" style="margin-bottom: -5px">Print delay</label>
+																			<input type="number" id="settings_print_delay" class="form-control form-control-sm" required="required" maxlength="5">
+																		</div>
+																	</div>
+																</div>
+
+																<br>
+																<div class="form-row">
+																	<div class="col-sm-8">
+																		<button type="button" onclick="settingsGet()" class="btn btn-info">Get settings</button>
+																		<button type="button" onclick="settingsSet()" class="btn btn-info">Set settings</button>
+																	</div>
+
+																	<div class="col-sm-4">
+																		<button type="button" onclick="settingsBackup()"   class="btn btn-info">Backup</button>
+																		<button type="button" onclick="settingsRestore()"  class="btn btn-info">Restore</button>
+																		<button type="button" onclick="settingsClearMem()" class="btn btn-danger">Clear memory</button>
+																	</div>
 																</div>
 															</div>
-
-															<div class="col-sm-4">
-																<div class="form-group">
-																	<label for="settings_screensaver" class="panel-text">Screen saver</label>
-																	<input type="number" id="settings_screensaver" class="form-control form-control-sm" required="required" maxlength="5">
+															
+															<div class="tab-pane fade" id="manager_settings" role="tabpanel" aria-labelledby="manager_settings_tab">
+															
+																<div class="form-check form-check-inline" onchange="settingsManagerChangeToTray()">
+																	<input class="form-check-input" type="checkbox" id="settings_to_tray">
+																	<label class="form-check-label" for="settings_to_tray"> Minimize to tray</label>
 																</div>
-															</div>
-
-															<div class="col-sm-4">
-																<div class="form-group">
-																	<label for="settings_print_delay" class="panel-text">Print delay</label>
-																	<input type="number" id="settings_print_delay" class="form-control form-control-sm" required="required" maxlength="5">
+																		
+																<br>
+																<div class="form-check form-check-inline" onchange="settingsManagerChangeAutoStart()">
+																	<input class="form-check-input" type="checkbox" id="settings_auto_start">
+																	<label class="form-check-label" for="settings_auto_start"> Auto start with PC (will start minimized)</label>
 																</div>
 															</div>
 														</div>
-
-														<br>
-														<div class="form-row">
-															<div class="col-sm-8">
-																<button type="button" onclick="settingsGet()" class="btn btn-info">Get settings</button>
-																<button type="button" onclick="settingsSet()" class="btn btn-info">Set settings</button>
-															</div>
-
-															<div class="col-sm-4">
-																<button type="button" onclick="settingsBackup()"   class="btn btn-info">Backup</button>
-																<button type="button" onclick="settingsRestore()"  class="btn btn-info">Restore</button>
-																<button type="button" onclick="settingsClearMem()" class="btn btn-danger">Clear memory</button>
-															</div>
-														</div>
+																
 													</div>
 													
 													<div id="section_market" class="hide">
@@ -403,8 +460,8 @@
 						</div>
 						<div class="modal-body" id="modal_yes_no_text"></div>
 						<div class="modal-footer">
-							<button type="button" id="modal_yes_no_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
 							<button type="button" id="modal_yes_no_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+							<button type="button" id="modal_yes_no_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</div>
@@ -436,8 +493,8 @@
 						</div>
 						
 						<div class="modal-footer">
+							<button type="button" id="modal_user_ok" class="btn btn-info">Ok</button>
 							<button type="button" id="modal_user_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
-							<button type="button" id="modal_user_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
 						</div>
 					</div>
 				</div>
@@ -497,8 +554,8 @@
 						</div>
 						
 						<div class="modal-footer">
+							<button type="button" id="modal_wallet_ok" class="btn btn-info">Ok</button>
 							<button type="button" id="modal_wallet_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
-							<button type="button" id="modal_wallet_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
 						</div>
 					</div>
 				</div>
@@ -568,8 +625,8 @@
 						</div>
 						
 						<div class="modal-footer">
-							<button type="button" class="btn btn-info" id="modal_transaction_btn_cancel" onclick="modalTransactionHide()" data-dismiss="modal">Cancel</button>
 							<button type="button" class="btn btn-info" id="modal_transaction_btn_broadcast" onclick="modalTransactionBroadcast()" data-dismiss="modal">Broadcast</button>
+							<button type="button" class="btn btn-info" id="modal_transaction_btn_cancel" onclick="modalTransactionHide()" data-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</div>
@@ -599,6 +656,7 @@
 										<option>Password</option>
 										<option>Random password</option>
 										<option>Login and Password</option>
+										<option>Login and Password + URL</option>
 										<option>Credit Card 1</option>
 										<option>Credit Card 2</option>
 									</select>
@@ -615,6 +673,13 @@
 							
 							<!-- Password -->
 							<div id="modal_pass_type_pass">
+							
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+							
 								<div class="form-group row">
 									<div class="col-sm-12">
 										<label for="modal_pass_data">Password</label>
@@ -625,6 +690,13 @@
 							
 							<!-- Random password -->
 							<div class="hide" id="modal_pass_type_rdn">
+							
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+							
 								<div class="form-group row">
 									<div class="col-sm-12">
 										<label for="modal_pass_rnd_len">Password length</label>
@@ -654,6 +726,13 @@
 							
 							<!-- Login and Password -->
 							<div id="modal_pass_type_log_pass" class="hide">
+							
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+							
 								<div class="form-group row">
 									<div class="col-sm-6">
 										<label for="modal_pass_login">Login</label>
@@ -663,6 +742,35 @@
 									<div class="col-sm-6">
 										<label for="modal_pass_data1">Password</label>
 										<input type="text" id="modal_pass_data1" class="form-control form-control-sm" placeholder="Enter password" required="required" maxlength="1000">
+									</div>
+								</div>
+							</div>
+							
+							<!-- Login and Password + URL -->
+							<div id="modal_pass_type_log_pass_url" class="hide">
+							
+								<div class="form-group row no-bottom-margin">
+									<div class="col-sm-12">
+										<hr>
+									</div>
+								</div>
+								
+								<div class="form-group row">
+									<div class="col-sm-12">
+										<label for="modal_pass_url">URL</label>
+										<input type="text" id="modal_pass_url" class="form-control form-control-sm" placeholder="Enter URL" required="required" maxlength="1000">
+									</div>
+								</div>
+							
+								<div class="form-group row">
+									<div class="col-sm-6">
+										<label for="modal_pass_login2">Login</label>
+										<input type="text" id="modal_pass_login2" class="form-control form-control-sm" placeholder="Enter login" required="required" maxlength="1000">
+									</div>
+
+									<div class="col-sm-6">
+										<label for="modal_pass_data2">Password</label>
+										<input type="text" id="modal_pass_data2" class="form-control form-control-sm" placeholder="Enter password" required="required" maxlength="1000">
 									</div>
 								</div>
 							</div>
@@ -741,8 +849,8 @@
 						</div>
 						
 						<div class="modal-footer">
+							<button type="button" id="modal_pass_ok" class="btn btn-info">Ok</button>
 							<button type="button" id="modal_pass_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
-							<button type="button" id="modal_pass_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
 						</div>
 						
 					</div>
@@ -779,8 +887,8 @@
 						</div>
 						
 						<div class="modal-footer">
+							<button type="button" id="modal_add_2fa_ok" class="btn btn-info">Ok</button>
 							<button type="button" id="modal_add_2fa_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
-							<button type="button" id="modal_add_2fa_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
 						</div>
 					</div>
 				</div>
@@ -910,7 +1018,7 @@
 			</div>
 			<!-- Modal Keyboard -->
 			
-			<!-- Modal update -->
+			<!-- Modal update firmware -->
 			<div class="modal fade" id="modal_update" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
 				<div class="modal-dialog modal-dialog-centered" role="document">
 					<div class="modal-content">
@@ -933,7 +1041,28 @@
 					</div>
 				</div>
 			</div>
-			<!-- Modal update -->
+			<!-- Modal update firmware -->
+			
+			
+			<!-- Modal update manager -->
+			<div class="modal fade" id="modal_update_manager" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-keyboard="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+					
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_update_title_manager">Downloading update...</h4>
+						</div>
+						
+						<div class="modal-body" id="modal_update_body_manager">
+							<div id="modal_update_progress_bar_manager" class="progress" style="height: 30px;">
+								<div id="modal_update_progress_manager" class="progress-bar bg-info" role="progressbar" style="width: 0%; transition:none" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+			<!-- Modal update manager -->
 			
 			
 			<!-- Modal about -->

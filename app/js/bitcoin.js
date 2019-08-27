@@ -20,7 +20,7 @@ const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',	ticker: 'LTC',	fee: 10,	fe
 const coinPrmDash =			{name: 'Dash',				ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	explorer: 'https://chain.so/address/DASH/'};
 const coinPrmDashTestNet = 	{name: 'Dash Testnet',		ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	explorer: 'https://chain.so/address/DASHTEST/'};
 
-const coinPrmDoge =  		{name: 'DogeCoin',			ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	explorer: 'https://chain.so/address/DOGE/'};
+const coinPrmDoge =  		{name: 'DogeCoin',			ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	explorer: 'https://dogechain.info/address/'};
 const coinPrmDogeTestNet = 	{name: 'DogeCoin Testnet',	ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	explorer: 'https://chain.so/address/DOGETEST/'};
 
 const coinPrmZcash = 		{name: 'Zcash',				ticker: 'ZEC',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'zec.png',		explorer: 'https://chain.so/address/ZEC/'};
@@ -90,15 +90,13 @@ const bitcoinPushTx = async (coin, tx, testnet, timeout) => {
 			let ret = 'Unknown server response';
 			
 			clearTimeout(tmr);
-			if (result)
-			{
-				if (result.result)
-				{
+			if (result)	{
+				if (result.result) {
 					ret = true;
-				}
-				else
-				{
-					if (result.error) ret = ret.error;
+				} else {
+					if (result.error) {
+						ret = result.error;
+					}
 				}
 			} 
 			

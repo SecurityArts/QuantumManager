@@ -2,14 +2,19 @@
 "use strict";
 const fs = require('fs');
 const qr = require('qr-image');
+const request = require('request');
 const shell = require('electron').shell;
 const remote = require('electron').remote; 
-const {remot} = require('electron');
+const ipc = require('electron').ipcRenderer;
 const {dialog} = require('electron').remote;
 const {clipboard} = require('electron');
 const {ipcRenderer} = require('electron');
+const autoLaunch = require('auto-launch');
+const electronStore = require('electron-store');
+
 
 let devstatus = false;
+let minimizeToTray = false;
 
 //------------------------------------------------  Helpers  ---------------------------------------------------------------
 function hexStringToArray(hex) {
@@ -74,32 +79,107 @@ function infoShow(title, content, type, delay) {
 
 
 //------------------------------------------------  Updates  ---------------------------------------------------------------
+async function showProgress(received, total) {
+	let pr = (received * 100) / total;
+	$('#modal_update_progress_manager').css('width', pr + '%').attr('aria-valuenow', pr);
+}
+
+function downloadFile(fileURL, targetPath) {
+	return new Promise(function(resolve, reject) {
+		
+		let total_bytes = 0;
+		let received_bytes = 0;
+        
+		let req = request({
+			method: 'GET',
+			uri: fileURL
+		});
+
+		let out = fs.createWriteStream(targetPath);
+		req.pipe(out);
+
+		req.on('response', function(data) {
+			total_bytes = parseInt(data.headers['content-length']);
+		});
+
+		req.on('data', function(chunk) {
+			received_bytes += chunk.length;
+			showProgress(received_bytes, total_bytes);
+		});
+
+		req.on('end', function() {
+			resolve(true);
+		});
+		
+		req.on('error', function() {
+			resolve(false);
+		});
+	});
+}
+
 async function uiCheckSoftwareUpdates(localVersion) {
-	$.get('https://security-arts.com/downloads/software', {rnd: rnd()}).then((ret) => {
+	$.get('https://security-arts.com/downloads/software.json', {rnd: rnd()}).then(async (ret) => {
 		
 		let serverMsg = '';
 		let serverVersion = '0';
+		let fileUrl = '';
+		let filePath = '';
 		
 		switch (process.platform) {
 			case 'win32':
 				serverVersion = ret.manager.windows;
 				serverMsg = ret.manager.windows_msg_eng;
+				filePath = 'QuantumManager_win.msi';
+				fileUrl = 'https://security-arts.com/downloads/QuantumManager_win.msi';
 				break;
 				
 			case 'linux':
 				serverVersion = ret.manager.linux;
 				serverMsg = ret.manager.linux_msg_eng;
+				filePath = 'QuantumManager_linux.AppImage';
+				fileUrl = 'https://security-arts.com/downloads/QuantumManager_linux.AppImage';
 				break;
 				
 			case 'darwin':
 				serverVersion = ret.manager.mac;
 				serverMsg = ret.manager.mac_msg_eng;
+				filePath = 'QuantumManager_mac.dmg';
+				fileUrl = 'https://security-arts.com/downloads/QuantumManager_mac.dmg';
 				break;
 		}
 		
 		if (cmpVersions(serverVersion, localVersion)) {
-			infoShow('Software update', `New Quantum Manager version ${serverVersion} is available.
-			 Please visit www.security-arts.com for updates. ` + serverMsg, 'info', '10000');
+			
+			if (await modalYesNo('Cancel', 'Ok', 'Update available', `New Quantum Manager version ${serverVersion} is available. Press OK for update. ` + serverMsg)) {
+				
+				let downloaded = false;
+				const app = remote.app;
+				let path = app.getPath('userData') + '\\' + filePath;
+				
+				$('#modal_update_manager').modal();
+				downloaded = (await downloadFile(fileUrl, path));
+				$('#modal_update_manager').hide();
+				
+				if (downloaded)
+				{
+					if (process.platform === 'linux') {
+						shell.showItemInFolder(path);
+					} else {
+						shell.openItem(path);
+					}
+					
+					await sleep(100);
+					remote.getCurrentWindow().close();
+				} else {
+					await modalYesNo('', 'Ok', 'Error downloading file', 'Please restart program and try again');
+				}
+			}
+		} else {
+			
+			const app = remote.app;
+			let path = app.getPath('userData') + '\\' + filePath;
+			
+			fs.unlink(path, (err) => {});
 		}
 	});
 }
@@ -537,7 +617,7 @@ async function walletSendBtc() {
 	if (bitcoinValidateAddr(addr, net)) {
 		if (amount && !isNaN(amount)) {
 			if (feeRate && !isNaN(feeRate)) {
-				let utxo = await bitcoinGetUnspentOutputs(type, wallets.Wallets[walletIndex - 1].Addr, testnet, 2000);
+				let utxo = await bitcoinGetUnspentOutputs(type, wallets.Wallets[walletIndex - 1].Addr, testnet, 5000);
 				
 				if (utxo) {
 					let targets = [{address: addr, value: + (amount * 100000000)}];
@@ -576,7 +656,7 @@ async function walletSendBtc() {
 
 							tx.ins[i].script = bitcoin.script.compile(hexStringToArray(inputs[i].script));
 															
-							let ret = await hidSignTransaction(walletIndex, tx.toHex() + '01000000', 'SECP256K1', i + 1, tx.ins.length, 30000);
+							let ret = await hidSignTransaction(walletIndex, tx.toHex() + '01000000', 'SECP256K1', i + 1, tx.ins.length, 70000);
 							modalTransactionStatus('Signing...');
 							if (ret.Error) {
 								infoShow('Error', ret.Error, 'error', 5000);
@@ -607,8 +687,8 @@ async function walletSendBtc() {
 						}
 						
 						modalTransactionHide();
-					} else infoShow('Error', 'Not enough of btc to send', 'error', 5000);
-				} else infoShow('Error', 'Not enough of btc to send', 'error', 5000);
+					} else infoShow('Error', 'Not enough of money to send', 'error', 5000);
+				} else infoShow('Error', 'Not enough of money to send', 'error', 5000);
 			} else infoShow('Error', 'Invalid fee value', 'error', 5000);
 		} else infoShow('Error', 'Invalid send amount', 'error', 5000);
 	} else infoShow('Error', 'Invalid send address', 'error', 5000);
@@ -1135,7 +1215,7 @@ async function walletAdd() {
 async function walletDelete() {
 	if (!hidIsBusy()) {
 		infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-		let ret = await hidDeleteWallet(walletIndex, 30000);
+		let ret = await hidDeleteWallet(walletIndex, 40000);
 		infoHide();
 
 		if (ret.Error) {
@@ -1209,6 +1289,8 @@ async function walletShowData() {
 //------------------------------------------------  Passwords  -------------------------------------------------------------
 let passwords = false;
 let passwordIndex = 0;
+let password2faTimer = 0;
+
 
 async function loadPasswords() {
 	$('#listPasswords').html('');
@@ -1244,11 +1326,28 @@ function passwordSelect(index) {
 		$('#password_name').text(passwords.Passwords[index - 1].Name);
 		$('#password_pass').text('**********');
 		$('#password_2fa').text(passwords.Passwords[index - 1].TwoFA);
+		$('#password_copy').show();
+		
+		$('#password_url').hide();
+		$('#password_login').hide();
+		$('#password_url_text').hide();
+		$('#password_url_open').hide();
+		$('#password_login_text').hide();
+		$('#password_2fs_show').hide();
+		$('#password_2fa_pb').hide();
+		$('#password_2fa_inc').hide();
+		$('#password_2fa_code1').hide();
+		$('#password_2fa_code2').hide();
+		$('#password_2fa_time').css('width', '0%');
 										
 		if (passwords.Passwords[index - 1].TwoFA === 'NONE') {
 			$('#password_2fa_btn').text('Add 2FA');
 		} else {
 			$('#password_2fa_btn').text('Delete 2FA');
+			
+			if ((passwords.Passwords[index - 1].TwoFA === 'HOTP') || (passwords.Passwords[index - 1].TwoFA === 'TOTP')) {
+				$('#password_2fs_show').show();
+			}
 		}
 																												
 		$('#password_qr').attr('d', '');
@@ -1262,7 +1361,7 @@ async function passwordShowData() {
 	if (!hidIsBusy()) {
 		if (passwordIndex) {
 			infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-			let ret = await hidGetPasswordData(passwordIndex, 30000);
+			let ret = await hidGetPasswordData(passwordIndex, 40000);
 			infoHide();
 
 			if (ret.Error) {
@@ -1272,25 +1371,52 @@ async function passwordShowData() {
 			}
 
 			if (ret.Command === 'GetPasswordData') {
-				let q = qr.svgObject(ret.Password, { type: 'svg' });
-				$('#password_pass').text(ret.Password);
 				
-				$('#password_qr').attr('d', q.path);
-				$('#password_viewbox')
-					.width((q.size + 1) * 4)
-					.height((q.size + 1) * 4)
-					.attr('viewBox', '0 0 ' + ++q.size + ' ' + q.size);
+				let pass = ret.Password;
+				
+				if (pass.includes('\f')) {
+					
+					$('#password_url').show();
+					$('#password_copy').hide();
+					$('#password_url_text').show();
+					$('#password_url_open').show();
+					
+					let login = '';
+					let url = pass.split('\f', 1);
+					pass = pass.substring(pass.indexOf('\f') + 1);
+					
+					if (pass.includes('\t')) {
+						login = pass.split('\t', 1);
+						pass = pass.substring(pass.indexOf('\t') + 1);
+						
+						$('#password_login').show();
+						$('#password_login_text').show();
+					}
+					
+					$('#password_url').text(url);
+					$('#password_pass').text(pass);
+					$('#password_login').text(login);
+				} else {
+					
+					let q = qr.svgObject(pass, { type: 'svg' });
+					
+					$('#password_pass').text(pass);
+					$('#password_qr').attr('d', q.path);
+					$('#password_viewbox')
+						.width((q.size + 1) * 4)
+						.height((q.size + 1) * 4)
+						.attr('viewBox', '0 0 ' + ++q.size + ' ' + q.size);
+				}
 			}
-			
 		}
 	}
 }
 
-async function passwordClipBoard() {
+async function passwordCopyClpBrd() {
 	if (!hidIsBusy()) {
 		if (passwordIndex) {
 			infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-			let ret = await hidGetPasswordData(passwordIndex, 30000);
+			let ret = await hidGetPasswordData(passwordIndex, 40000);
 			infoHide();
 
 			if (ret.Error) {
@@ -1307,10 +1433,114 @@ async function passwordClipBoard() {
 	}
 }
 
-function passwordCopyKey() {
+async function passwordGet2FA() {
+	if (!hidIsBusy()) {
+		if (passwordIndex) {
+			infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
+			let ret = await hidGet2FA(passwordIndex, 40000);
+			infoHide();
+			
+			if (ret.Error) {
+				infoShow('Error', ret.Error, 'error', 5000);
+			} else {
+				infoHide();
+			}
+			
+			if (ret.Command === 'Get2FA') {
+				$('#password_2fa_code1').show();
+				$('#password_2fa_code2').show();
+				$('#password_2fa_code2').text(ret.Code);
+				
+				if (passwords.Passwords[passwordIndex - 1].TwoFA === 'HOTP') {
+					$('#password_2fa_inc').show();
+				}
+				
+				if (passwords.Passwords[passwordIndex - 1].TwoFA === 'TOTP') {
+					
+					let update = false;
+					let i = ret.ValidTime;
+					
+					
+					$('#password_2fa_pb').show();
+					$('#password_2fa_time').css('width', (ret.ValidTime / 29) * 100 + '%');
+					
+					clearTimeout(password2faTimer);
+					password2faTimer = setTimeout(async function update2faBar() {
+						
+						i = ++i % 30;
+						$('#password_2fa_time').css('width', (i / 29) * 100 + '%');
+						
+						if ((i == 0) || update) {
+							
+							update = true;
+							if (!hidIsBusy()) {
+								ret = await hidGet2FA(passwordIndex, 40000);
+								if (ret.Command === 'Get2FA') {
+									update = false;
+									i = ret.ValidTime;
+									$('#password_2fa_code2').text(ret.Code);
+								}
+							}
+						}
+							
+						if ($('#password_2fa_pb').is(":visible")) {
+							password2faTimer = setTimeout(update2faBar, 1000);
+						}
+					}, 1000);
+				}
+			}
+		}
+	}
+}
+
+async function password2faInc() {
+	if (!hidIsBusy()) {
+		if (passwordIndex) {
+			let ret = await hidInc2FA(passwordIndex, 5000);
+			
+			if (ret.Error) {
+				infoShow('Error', ret.Error, 'error', 5000);
+			} else {
+				infoShow('Success', '2FA counter incremented', 'success', 5000);
+				if (ret.Command === 'Inc2FA') {
+					$('#password_2fa_code1').show();
+					$('#password_2fa_code2').show();
+					$('#password_2fa_code2').text(ret.Code);
+				}
+			}
+		}
+	}
+}
+
+function passwordOpenURL() {
+	openExternalUrl($('#password_url').text());
+}
+
+function passwordCopyPass() {
 	if (passwords && (passwords.Passwords.length >= passwordIndex)) {
 		clipboard.writeText($('#password_pass').text());
 		infoShow('Success', 'Password copied to clipboard', 'success', 5000);
+	}
+}
+
+function passwordCopyLogin() {
+	if (passwords && (passwords.Passwords.length >= passwordIndex)) {
+		clipboard.writeText($('#password_login').text());
+		infoShow('Success', 'Login copied to clipboard', 'success', 5000);
+	}
+}
+
+function passwordCopyUrl() {
+	if (passwords && (passwords.Passwords.length >= passwordIndex)) {
+		clipboard.writeText($('#password_url').text());
+		infoShow('Success', 'URL copied to clipboard', 'success', 5000);
+	}
+}
+
+function passwordCopy2FA() {
+	if (passwords && (passwords.Passwords.length >= passwordIndex)) {
+		clipboard.writeText($('#password_2fa_code2').text());
+		infoShow('Success', '2FA copied to clipboard', 'success', 5000);
 	}
 }
 
@@ -1356,7 +1586,7 @@ async function passwordAdd() {
 async function passwordDelete() {
 	if (!hidIsBusy()) {
 		infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-		let ret = await hidDeletePassword(passwordIndex, 30000);
+		let ret = await hidDeletePassword(passwordIndex, 40000);
 		infoHide();
 										
 		if (ret.Error) {
@@ -1409,7 +1639,7 @@ async function passwordTwoFA() {
 				}
 			} else {
 				infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-				let ret = await hidDel2FA(passwordIndex, 30000);
+				let ret = await hidDel2FA(passwordIndex, 40000);
 				infoHide();
 
 				if (ret.Error) {
@@ -1435,6 +1665,7 @@ async function passwordTwoFA() {
 //------------------------------------------------  Settings  --------------------------------------------------------------
 function settingsSelect() {
 	uiShowSection('settings');
+	settingsManagerRead();
 }
 
 async function loadSettings() {
@@ -1475,7 +1706,7 @@ async function settingsSet() {
 		};
 		
 		infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
-		let ret = await hidSetSettings(Settings, 30000);
+		let ret = await hidSetSettings(Settings, 40000);
 		infoHide();
 
 		if (ret.Command === 'SetSettings') {
@@ -1615,6 +1846,57 @@ async function settingsRestore() {
 		}
 	}
 }
+
+
+async function settingsManagerReadStore() {
+	let store = new electronStore();
+	minimizeToTray = (store.get('MinimizeToTray') === 'true');
+	
+	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
+}
+
+async function settingsManagerRead() {
+	
+	let autoLauncher = new autoLaunch({name: 'QuantumManager'});
+	
+	autoLauncher.isEnabled().then((isEnabled) => {
+		$("#settings_auto_start").prop('checked', isEnabled);
+	}).catch((err) => {
+		$("#settings_auto_start").prop('checked', false);
+	});
+	
+	settingsManagerReadStore();
+	$("#settings_to_tray").prop('checked', minimizeToTray);
+}
+
+async function settingsManagerChangeAutoStart() {
+	
+	let autoLauncher = new autoLaunch({
+		name: 'QuantumManager',
+		isHidden: true
+	});
+	
+	if ($("#settings_auto_start").prop('checked')) {
+		autoLauncher.enable();
+	} else {
+		autoLauncher.disable();
+	}
+}
+
+async function settingsManagerChangeToTray() {
+	let store = new electronStore();
+	
+	if ($("#settings_to_tray").prop('checked')) {
+		minimizeToTray = true;
+		store.set('MinimizeToTray', 'true');
+	} else {
+		minimizeToTray = false;
+		store.set('MinimizeToTray', 'false');
+	}
+	
+	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
+}	
+	
 //------------------------------------------------  Settings  --------------------------------------------------------------
 
 
@@ -1762,6 +2044,9 @@ document.addEventListener("keydown", function (e) {
 
 
 $(document).ready(async () => {
+	
+	settingsManagerReadStore();
+	
 	$("#max-btn").on("click", () => {
 		if (!remote.getCurrentWindow().isMaximized()){
 			remote.getCurrentWindow().maximize();
@@ -1771,7 +2056,11 @@ $(document).ready(async () => {
 	});
 
 	$("#min-btn").on("click", () => {
-		remote.getCurrentWindow().minimize();
+		if (minimizeToTray) {
+			remote.getCurrentWindow().hide();
+		} else {
+			remote.getCurrentWindow().minimize();
+		}
 	});
 	
 	$("#close-btn").on("click", () => {
@@ -1789,7 +2078,10 @@ $(document).ready(async () => {
 			.removeClass('toolbar_focused')
 			.addClass('toolbar_unfocused');
     });
-
+	
+	ipcRenderer.on('pc-resume', () => {
+		onConnect();
+    });
 	
 	uiCheckSoftwareUpdates(remote.app.getVersion());
 	$('#about_version').text(remote.app.getVersion());	

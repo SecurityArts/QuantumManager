@@ -135,6 +135,10 @@ textarea:focus, input:focus, input[type]:focus {
     outline: 0 none;
 }
 
+.input_error {
+	border-color: #ff0000;
+}
+
 input.form-control:focus {
 	box-shadow: none;
 }
