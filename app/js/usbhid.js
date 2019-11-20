@@ -3,187 +3,238 @@
 const HID = require('node-hid');
 const detect = require('usb-detection');
 
-const vid = 6802;		// 0x1A92 - Vendor ID
-const pid_kbd = 8209;	// 0x2011 - Product ID, keyboard
-const pid_u2f = 8210;	// 0x2012 - Product ID, FIDO U2F
-const pid_hid = 8211;	// 0x2013 - Product ID, HID interface
-const pid_boot = 8227;	// 0x2023 - Product ID, bootloader
 
-const typeCid = 0x86;	// Channel ID type - init channel
-const typeData = 0x83;	// Channel ID type - transfer data
+const USB_VID		= 6802;	// 0x1A92 - Vendor ID
+const USB_PID_KBD	= 8209;	// 0x2011 - Product ID, keyboard
+const USB_PID_U2F	= 8210;	// 0x2012 - Product ID, FIDO U2F
+const USB_PID_HID	= 8211;	// 0x2013 - Product ID, HID interface
+const USB_PID_BOOT	= 8227;	// 0x2023 - Product ID, bootloader
 
-let serial = 0;
-let channelId = 0x00;
 
-let mode = '';
-let device = false;
-let connected = false;
-let onConnectFnc = false;
-let onDisconnectFnc = false;
-let hanlersFncEnabled = false;
+const PKT_CID		= 0x86; // Channel ID type - init channel
+const PKT_DAT		= 0x83;	// Channel ID type - transfer data
+const PKT_ERR		= 0xBF;	// Channel ID type - error
+
+
+const ERR_USB_BUSY			= 10000 // Command in progress. Check 'hidIsBusy' status before new command
+const ERR_USB_WRITE			= 10001 // Command write error
+const ERR_USB_READ_ERROR	= 10002 // USB read error
+const ERR_USB_READ_TIMEOUT	= 10003	// No command response for given timeout
+const ERR_USB_PACKET_ERROR	= 10004 // Read packet error
+const ERR_USB_DISCONNECTED	= 10005 // USB Disconnected during read
+const ERR_USB_JSON			= 10006 // Response JSON object parsing error
+
+
+const USB_DEV_MODE_DISCONNECTED	= 0	// Device disconnected
+const USB_DEV_MODE_HID			= 1	// Device HID mode, ready to comunicate
+const USB_DEV_MODE_BOOT			= 2	// Device HID Boot mode, ready to comunicate
+const USB_DEV_MODE_KBD			= 3	// Device in Keyboard mode
+const USB_DEV_MODE_U2F			= 4 // Device in U2F mode
+
+
+let deviceSerial = 0;
+let deviceHandler = false;
+let deviceMode = USB_DEV_MODE_DISCONNECTED;
+
+
+let handlersFncEnabled = false;
+let handlersFncOnConnectFnc = false;
+let handlersFncOnDisconnectFnc = false;
+
+
+let commandChannelId = 0;
 let commandInProgress = false;
 
 
 //-------------------------------------  Helper functions  ----------------------------------------------------------------
-function UserError(message, code, prm = 0) {
-	return {prm: prm, code: code, Error: message}
+function rnd() {
+	return Math.floor(Math.random() * 0x100000000);
 }
 
-function rnd() {
-	return Math.floor(Math.random() * 0xFFFFFFFF);
+function usbError(error, code) {
+	return {Error: error, ErrCode: code}
+}
+
+function rndArray(len) {
+	let buff = [];
+	
+	while (len--) {
+		buff.push(Math.floor(Math.random() * 0x100));
+	}
+	
+	return buff;
+}
+
+function compareArrays(arr1, arr2, len)
+{
+	for (let i = 0; i < len; i++) {
+		if (arr1[i] !== arr2[i]) {
+			return false;
+		}
+	}
+	
+	return true;
 }
 
 function jsonToArray(json) {
 	return JSON.stringify(json).split('').map((item) => item.charCodeAt());
 }
 
-function arrayToJson(str) {
-	str = str.map((item) => String.fromCharCode(item)).join('');
+function arrayToJson(arr) {
+	arr = arr.map((item) => String.fromCharCode(item)).join('');
 	
 	try {
-		return JSON.parse(str);
+		return JSON.parse(arr);
 	} catch(e) {
-		return UserError("JSON string error: " + e, 9, str);
-	}
-}
-
-function strToJson(str) {
-	try {
-		return JSON.parse(str);
-	} catch(e) {
-		return {"status": "error", "data": str, "code": 1000};
+		return {Error: 'Command response error', ErrCode: ERR_USB_JSON};
 	}
 }
 //-------------------------------------  Helper functions  ----------------------------------------------------------------
 
 
 
-//-------------------------------------  Low level USB HID functions  -----------------------------------------------------
+//-------------------------------------  USB Detect/Discovery functions  --------------------------------------------------
 function hidGetSerial() {
-	return serial;
-}
-
-function hidIsConnected() {
-	return connected;
-}
-
-function hidGetMode() {
-	return mode;
+	return deviceSerial;
 }
 
 function hidIsBusy() {
 	return commandInProgress;
 }
 
-function hidEnableHandlers(enable = true) {
-	hanlersFncEnabled = enable;
+function hidGetMode() {
+	return deviceMode;
 }
 
-async function hidGetDevice(devSerial = 0) {
-	mode = '';
+function hidIsModeHID() {
+	return ((deviceMode === USB_DEV_MODE_HID) || (deviceMode === USB_DEV_MODE_BOOT));
+}
+
+function hidIsConnected() {
+	return (deviceMode !== USB_DEV_MODE_DISCONNECTED);
+}
+
+function hidEnableHandlers(enable = true) {
+	handlersFncEnabled = enable;
+}
+
+function hidSetHandlers(onConnectHandler = false, onDisconnectHandler = false) {
+	handlersFncOnConnectFnc = onConnectHandler;
+	handlersFncOnDisconnectFnc = onDisconnectHandler;
+}
+
+async function hidFindDevice(serial = 0) {
 	
-	if (device) {
+	deviceMode = USB_DEV_MODE_DISCONNECTED;
+	
+	if (deviceHandler) {
 		try {
-			device.close();
+			deviceHandler.close();
 		} catch (err) {
-			console.log("Close err: ", err);
+			return USB_DEV_MODE_DISCONNECTED;
 		}
 	}
 	
 	await sleep(100);
-	device = HID.devices().find((d) => {
-		if (d.vendorId === vid && (d.productId === pid_hid || d.productId === pid_boot) && (devSerial === d.serialNumber || devSerial === 0)) {
-			mode = 'mode_hid';
-			return true;
-		} else {
-			if (d.vendorId === vid) {
-				switch (d.productId) {
-					case pid_kbd: mode = 'mode_kbd'; break;
-					case pid_u2f: mode = 'mode_u2f'; break;
-				}
+	deviceHandler = HID.devices().find((d) => {
+		
+		if ((d.vendorId === USB_VID) && (serial === d.serialNumber || serial === 0))
+		{
+			deviceSerial = d.serialNumber;
+			switch (d.productId) {
+				case USB_PID_HID:
+					deviceMode = USB_DEV_MODE_HID;
+					return true;
+					
+				case USB_PID_BOOT:
+					deviceMode = USB_DEV_MODE_BOOT;
+					return true;
+					
+				case USB_PID_KBD:
+					deviceMode = USB_DEV_MODE_KBD;
+					return false;
+						
+				case USB_PID_U2F:
+					deviceMode = USB_DEV_MODE_U2F;
+					return false;
 			}
-			return false;
 		}
 	});
 	
-	if (device) {
+	if (deviceHandler) {
 		try {
-			serial = device.serialNumber;
 			await sleep(100);
-			device = new HID.HID(device.path);
+			deviceHandler = new HID.HID(deviceHandler.path);
+			if (!deviceHandler) {
+				deviceMode = USB_DEV_MODE_DISCONNECTED;
+			}
+			
 		} catch (err) {
-			device = undefined;
-			console.log("Can't connect device");
+			deviceHandler = false;
+			deviceMode = USB_DEV_MODE_DISCONNECTED;
+			return deviceMode;
 		}
 	}
 	
-	return connected = (device !== undefined);
-}
-
-function hidSetHandlers (onConnectHandler = false, onDisconnectHandler = false) {
-	onConnectFnc = onConnectHandler;
-	onDisconnectFnc = onDisconnectHandler;
+	return deviceMode;
 }
 
 function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
-	serial = 0;
-	device = false;
-	connected = false;	
-	detect.startMonitoring();
-	hanlersFncEnabled = true;
-
+	
+	deviceSerial = 0;
+	deviceHandler = false;
+	deviceMode = USB_DEV_MODE_DISCONNECTED;
+	handlersFncEnabled = true;
+	
 	if (onConnectHandler) {
-	    onConnectFnc = onConnectHandler;
+	    handlersFncOnConnectFnc = onConnectHandler;
     }
 
 	if (onDisconnectHandler) {
-	    onDisconnectFnc = onDisconnectHandler;
+	    handlersFncOnDisconnectFnc = onDisconnectHandler;
     }
 	
-	detect.on('add:' + vid, async (d) => {
-		console.log("Device add");
-		if (!connected) {
-            connected = await hidGetDevice();
-			console.log("Connected: ", connected);
-			console.log("Mode: ", mode);
-			if (connected) {
-				if (onConnectFnc && hanlersFncEnabled) {
-					await onConnectFnc();
-                }
-			} else {
-				if (d.productId === pid_kbd || d.productId === pid_u2f)	{
-				    serial = d.serialNumber;
-                }
+	detect.startMonitoring();	
+	detect.on('add:' + USB_VID, async (d) => {
+		if (deviceMode === USB_DEV_MODE_DISCONNECTED) {
+			
+			await hidFindDevice();
+			if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
+				if (handlersFncOnConnectFnc && handlersFncEnabled) {
+					await handlersFncOnConnectFnc();
+				}
 			}
 		}
 	});
 	
-	detect.on('remove:' + vid, async (d) => {
-		console.log("Device remove");
-		if (serial === d.serialNumber) {
-			mode = '';
-			device = false;
-			if (connected) {
-				serial = 0;
-				connected = false;
-				if (onDisconnectFnc && hanlersFncEnabled) {
-				    await onDisconnectFnc();
+	detect.on('remove:' + USB_VID, async (d) => {
+		if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
+			
+			if (deviceSerial === d.serialNumber) {
+				deviceSerial = 0;
+				deviceHandler = false;
+				deviceMode = USB_DEV_MODE_DISCONNECTED;
+				if (handlersFncOnDisconnectFnc && handlersFncEnabled) {
+				    await handlersFncOnDisconnectFnc();
                 }
 			}
 		}
 	});
 }
+//-------------------------------------  USB Detect/Discovery functions  --------------------------------------------------
 
 
-function deviceRead(timeout) {
+
+//-------------------------------------  Transport/Packet layer  ----------------------------------------------------------
+function hidReadPacket(timeout) {
 	return new Promise((resolve, reject) => {
-		let tmr = setTimeout(() => reject(new UserError("HID read timeout", 1)), timeout);
+		let tmr = setTimeout(() => reject(new usbError('USB read command timeout', ERR_USB_READ_TIMEOUT)), timeout);
 		
-		device.read((err, data) => {
+		deviceHandler.read((err, data) => {
 			clearTimeout(tmr);
 
 			if (err) {
-			    reject(new UserError("HID read error", 2));
+			    reject(new usbError('USB read command error', ERR_USB_READ_ERROR));
             }
 
 			if (data) {
@@ -195,29 +246,20 @@ function deviceRead(timeout) {
 }
 
 
-function deviceWrite(buff) {
-	let ret = 0;
+function hidWritePacket(buff) {
 	
 	if (process.platform === 'win32') {
-		let b = buff;
-		b.unshift(0);
-		try {
-			ret = device.write(b);
-		} catch (err) {
-			return false;
-		}
-	} else {
-		try {
-			ret = device.write(buff);
-		} catch (err) {
-			return false;
-		}
+		buff.unshift(0);
 	}
 	
-	return (ret !== 0);
+	try {
+		return (deviceHandler.write(buff) !== 0);
+	} catch (err) {
+		return false;
+	}
 }
 
-function hidSend(data, cid, type) {
+function hidWrite(cid, type, data) {
 	let txId = 0;
 	let txPtr = 0;
 	
@@ -229,538 +271,308 @@ function hidSend(data, cid, type) {
 	buff[0] = (cid >> 24) & 0xFF;
 	buff[1] = (cid >> 16) & 0xFF;
 	buff[2] = (cid >> 8)  & 0xFF;
-	buff[3] = (cid)  & 0xFF;
+	buff[3] = (cid >> 0)  & 0xFF;
 	buff[4] = type;
-	buff[5] = (size >> 8)  & 0xFF;
-	buff[6] = (size)  & 0xFF;
+	buff[5] = (size >> 8) & 0xFF;
+	buff[6] = (size >> 0) & 0xFF;
 	buff = buff.concat(tmp);
 	
-	if (deviceWrite(buff) === false) {
+	if (!hidWritePacket(buff)) {
 	    return false;
     }
 	
 	size -= Math.min(size, sizeTx);
-	while (size && connected) {
+	while (size && hidIsModeHID()) {
+		
 		txPtr += sizeTx;
 		sizeTx = Math.min(size, 59);
+		size -= sizeTx;
 		tmp = data.slice(txPtr, txPtr + sizeTx);
 			
 		buff = [];
 		buff[0] = (cid >> 24) & 0xFF;
 		buff[1] = (cid >> 16) & 0xFF;
 		buff[2] = (cid >> 8)  & 0xFF;
-		buff[3] = (cid)  & 0xFF;
+		buff[3] = (cid >> 0)  & 0xFF;
 		buff[4] = txId++;
 		buff = buff.concat(tmp);
 
-		if (deviceWrite(buff) === false) {
+		if (!hidWritePacket(buff)) {
 		    return false;
         }
-
-		size -= sizeTx;
 	}
 	
 	return true;
 }
 
 
-async function hidRead(timeout) {
+async function hidRead(cid, type, timeout) {
 	let size = 0;
 	let rxId = 0;
-	let buff = [];
+	let payload = [];
 	
-	while (connected) {
-		let data = await deviceRead(timeout);
-		let dataSize = (data[5] << 8) + data[6];
-		let cid = (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
+	while (hidIsModeHID()) {
 		
-		switch (data[4]) {
-			case 0xBF: // CMD Error
-				throw new UserError("HID command error", 3);
+		let buff = await hidReadPacket(timeout);
+		
+		let payloadType = buff[4];
+		let payloadSize = (buff[5] << 8) + buff[6];
+		let id = (buff[0] << 24) + (buff[1] << 16) + (buff[2] << 8) + buff[3];
+		
+		switch (payloadType) {
+			case PKT_ERR:
+				throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
 			    break;
 				
-			case 0x86: // CMD Init
-				if ((cid === 0xFFFFFFFF || cid === -1) && dataSize === 0x11) {
-					buff = data.slice(7, 7 + dataSize);
-					return { cid: 0xFFFFFFFF, data: buff, type: typeCid };
+			case PKT_CID:
+				if ((id === cid || id === -1) && (payloadType === type) && (payloadSize === 17)) {
+					return buff.slice(7, 7 + payloadSize);
 				} else {
-				    throw new UserError("HID init CID error", 4);
+				    throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
                 }
 			    break;
 				
-			case 0x83: // CMD First data block
-				if (cid === channelId) {
+			case PKT_DAT:
+				if ((id === cid) && (payloadType === type)){
 					rxId = 0;
-					let s = Math.min(dataSize, 57);
-					size = dataSize - s;
-					buff = data.slice(7, 7 + s);
+					let s = Math.min(payloadSize, 57);
+					size = payloadSize - s;
+					payload = buff.slice(7, 7 + s);
 					if (size === 0) {
-					    return { cid: channelId, data: buff, type: typeData };
+					    return payload;
                     }
 				} else {
-				    throw new UserError("HID CID error", 5);
+				    throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
                 }
 			    break;
 				
-			default: // CMD Data sequence block
-				if (cid === channelId) {
+			default:
+				if ((id === cid) && (payloadType === rxId)) {
 					if (size) {
-						if (data[4] === rxId) {
-							rxId++;
-							let s = Math.min(size, 59);
-							size -= s;
-							buff = buff.concat(data.slice(5, 5 + s));
-							if (size === 0) {
-							    return { cid: channelId, data: buff, type: typeData };
-                            }
-						} else {
-						    throw new UserError("HID seq error", 6);
-                        }
-					} else {
-					    throw new UserError("HID invalid block", 7);
-                    }
-				} else {
-				    throw new UserError("HID CID error", 8);
-                }
+						rxId++;
+						let s = Math.min(size, 59);
+						size -= s;
+						payload = payload.concat(buff.slice(5, 5 + s));
+						if (size === 0) {
+						    return payload;
+						}
+						continue;
+					}
+				}
+				
+				throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
 			    break;
 		}
 	}
 	
-	throw new UserError("HID read error", 9);
+	throw new usbError('USB Disconnected', ERR_USB_DISCONNECTED);
 }
 
 async function hidInitChannel(timeout) {
-	let buff = [];
-		
-	channelId = 0xFFFFFFFF;
-	buff[0] = Math.floor(Math.random() * 256);
-	buff[1] = Math.floor(Math.random() * 256);
-	buff[2] = Math.floor(Math.random() * 256);
-	buff[3] = Math.floor(Math.random() * 256);
-	buff[4] = Math.floor(Math.random() * 256);
-	buff[5] = Math.floor(Math.random() * 256);
-	buff[6] = Math.floor(Math.random() * 256);
-	buff[7] = Math.floor(Math.random() * 256);
+	let buff = rndArray(8);
 	
 	commandInProgress = true;
-	if (hidSend(buff, channelId, typeCid)) {
-		let ret;
+	commandChannelId = 0xFFFFFFFF;
+	
+	if (hidWrite(commandChannelId, PKT_CID, buff)) {
+		let data;
 		
 		try {
-			ret = await hidRead(timeout);
+			data = await hidRead(commandChannelId, PKT_CID, timeout);
 		} catch (err) {
-			console.log("Init channel error: ", err);
+			console.log('Init channel error: ', err);
 			commandInProgress = false;
 			return false;
 		}
 			
-		if (ret.cid === channelId) {
-			if ((buff[0] === ret.data[0]) && (buff[1] === ret.data[1]) && (buff[2] === ret.data[2]) && (buff[3] === ret.data[3]) && 
-				(buff[4] === ret.data[4]) && (buff[5] === ret.data[5]) && (buff[6] === ret.data[6]) && (buff[7] === ret.data[7])) {
-				channelId = (ret.data[8] << 24) | (ret.data[9] << 16) | (ret.data[10] << 8) | ret.data[11];
-				commandInProgress = false;
-				return true;
-			}
+		if (compareArrays(buff, data, buff.length)) {
+			commandChannelId = (data[8] << 24) | (data[9] << 16) | (data[10] << 8) | data[11];
+			commandInProgress = false;
+			return true;
 		}
 	}
 			
 	commandInProgress = false;
 	return false;
 }
+//-------------------------------------  Transport/Packet layer  ----------------------------------------------------------
 
+
+
+
+//-------------------------------------  Transaction layer  ---------------------------------------------------------------
 async function hidCommand(data, timeout) {
-	if (!commandInProgress) {
-		commandInProgress = true;
-
-		if (hidSend(data, channelId, typeData)) {
-			let ret;
+	let ret;
+	
+	if (commandInProgress) {
+		return usbError('USB command in progress', ERR_USB_BUSY);
+	}
+		
+	commandInProgress = true;
+	if (hidWrite(commandChannelId, PKT_DAT, data)) {
 			
-			try {
-				ret = await hidRead(timeout);
-			} catch (err) {
-				commandInProgress = false;
-				return false;
-			}
-			
-			if (ret.cid === channelId && ret.type === typeData) {
-				commandInProgress = false;
-				return ret.data;
-			}
+		try {
+			ret = await hidRead(commandChannelId, PKT_DAT, timeout);
+		} catch (err) {
+			commandInProgress = false;
+			return err;
 		}
 		
+	} else {
 		commandInProgress = false;
+		return usbError ('USB write command error', ERR_USB_WRITE);
 	}
-	return false;
+			
+	commandInProgress = false;
+	return arrayToJson(ret);
 }
-//-------------------------------------  Low level USB HID functions  -----------------------------------------------------
+//-------------------------------------  Transaction layer  ---------------------------------------------------------------
 
 
 
-//-------------------------------------  General functions  ---------------------------------------------------------------
-async function hidGetStatus(timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetStatus", CmdId: rnd() }), timeout);
 
-	if (ret) {
-	    return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+//-------------------------------------  General commands  ----------------------------------------------------------------
+async function hidGetStatus(timeout = 1000) {
+	return await hidCommand(jsonToArray({ Command: 'GetStatus', CmdId: rnd() }), timeout);
 }
 
-async function hidAddUser(name, admin, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "AddUser", Name: name, Admin: admin, CmdId: rnd() }), timeout);
-
-	if (ret) {
-	    return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidAddUser(name, admin, timeout = 180000) {
+	return await hidCommand(jsonToArray({ Command: 'AddUser', Name: name, Admin: admin, CmdId: rnd() }), timeout);
 }
 
-async function hidInitRnd(timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "InitRnd", CmdId: rnd() }), timeout);
-
-	if (ret) {
-	    return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidInitRnd(timeout = 120000) {
+	return await hidCommand(jsonToArray({ Command: 'InitRnd', CmdId: rnd() }), timeout);
 }
 
-async function hidSetTime(timeout) {
+async function hidSetTime(timeout = 1000) {
     let epoch = Math.round(new Date().getTime() / 1000.0);
-	let ret = await hidCommand(jsonToArray({ Command: "SetTime", Time: epoch, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+	return await hidCommand(jsonToArray({ Command: 'SetTime', Time: epoch, CmdId: rnd() }), timeout);
 }
-//-------------------------------------  General functions  ---------------------------------------------------------------
+//-------------------------------------  General commands  ----------------------------------------------------------------
 
 
-//-------------------------------------  Passwords functions  -------------------------------------------------------------
-async function hidGetPasswords(timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetPasswords", CmdId: rnd() }), timeout);
 
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+//-------------------------------------  Passwords commands  --------------------------------------------------------------
+async function hidGetPasswords(timeout = 2000) {
+	return await hidCommand(jsonToArray({Command: 'GetPasswords', CmdId: rnd()}), timeout);
 }
 
-async function hidGetPasswordData(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetPasswordData", Index: index, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidGetPasswordData(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'GetPasswordData', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidDeletePassword(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "DelPassword", Index: index, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidDeletePassword(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'DelPassword', Index: index, CmdId: rnd()}), timeout);
 }
 
 async function hidAddPassword(name, pass, random, symbols, timeout) {
-	let cmd;
-	
 	if (random) {
-		cmd = { Command: "AddPassword", Name: name, Rnd: random, Symbols: symbols, CmdId: rnd() };
+		return await hidCommand(jsonToArray({Command: 'AddPassword', Name: name, Rnd: random, Symbols: symbols, CmdId: rnd()}), timeout);
     } else {
-		cmd = { Command: "AddPassword", Name: name, Password: pass, CmdId: rnd() };
+		return await hidCommand(jsonToArray({Command: 'AddPassword', Name: name, Password: pass, CmdId: rnd()}), timeout);
     }
-
-    let ret = await hidCommand(jsonToArray(cmd), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
 }
 
-async function hidGet2FA(index, timeout) {
+async function hidGet2FA(index, timeout = 40000) {
 	let epoch = Math.round(new Date().getTime() / 1000.0);
-	let ret = await hidCommand(jsonToArray({ Command: "Get2FA", Index: index, Time: epoch, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+	return await hidCommand(jsonToArray({Command: 'Get2FA', Index: index, Time: epoch, CmdId: rnd()}), timeout);
 }
 
-async function hidInc2FA(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "Inc2FA", Index: index, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidIncCounter2FA(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'IncCntr2FA', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidAdd2FA(name, type, key, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "Add2FA", Name: name, Type: type, Key: key, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidSetCounter2FA(index, counter, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'SetCntr2FA', Index: index, Counter: counter, CmdId: rnd()}), timeout);
 }
 
-async function hidDel2FA(index, timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "Del2FA", Index: index, CmdId: rnd()}), timeout);
 
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
-}
-//-------------------------------------  Passwords functions  -------------------------------------------------------------
-
-
-//-------------------------------------  Wallets functions  ---------------------------------------------------------------
-async function hidGetWallets(timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetWallets", CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidAdd2FA(index, type, key, timeout = 2000) {
+	return await hidCommand(jsonToArray({Command: 'Add2FA', Index: index, Type: type, Key: key, CmdId: rnd()}), timeout);
 }
 
-async function hidDeleteWallet(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "DelWallet", Index: index, CmdId: rnd() }), timeout);
+async function hidDel2FA(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'Del2FA', Index: index, CmdId: rnd()}), timeout);
+}
+//-------------------------------------  Passwords commands  --------------------------------------------------------------
 
-	if (ret) {
-		return arrayToJson(ret);
-    }
 
-	return { Error: 'USB command error' };
+
+//-------------------------------------  Wallets commands  ----------------------------------------------------------------
+async function hidGetWallets(timeout = 2000) {
+	return await hidCommand(jsonToArray({Command: 'GetWallets', CmdId: rnd()}), timeout);
 }
 
-async function hidAddWallet(name, type, key, otptions, timeout) {
-	let cmd = Object.assign({ Command: "AddWallet", Name: name, Type: type, Key: key, CmdId: rnd() }, otptions);
-    let ret = await hidCommand(jsonToArray(cmd), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidDeleteWallet(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'DelWallet', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidGetWalletData(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetWalletData", Index: index, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidAddWallet(name, type, key, otptions, timeout = 2000) {
+    return await hidCommand(jsonToArray(Object.assign({Command: 'AddWallet', Name: name, Type: type, Key: key, CmdId: rnd()}, otptions)), timeout);
 }
 
-async function hidGetWalletPubKey(index, timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "GetWalletPubKey", Index: index, CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidGetWalletData(index, timeout = 40000) {
+	return await hidCommand(jsonToArray({Command: 'GetWalletData', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidSignTransaction(index, tx, curve, input, inputs, timeout) {
-	let cmd = Object.assign({Command: "SignTransaction", Tx: tx, Index: index, Curve: curve, CmdId: rnd()}, {Input: input + "/" + inputs});
-    let ret = await hidCommand(jsonToArray(cmd), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
-}
-//-------------------------------------  Wallets functions  ---------------------------------------------------------------
-
-
-//-------------------------------------  Settings functions  --------------------------------------------------------------
-async function hidGetSettings(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "GetSettings", CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidGetWalletPubKey(index, timeout = 2000) {
+	return await hidCommand(jsonToArray({Command: 'GetWalletPubKey', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidSetSettings(settings, timeout) {
-	let cmd = Object.assign(settings, {Command: "SetSettings", CmdId: rnd()});
-    let ret = await hidCommand(jsonToArray(cmd), timeout);
+async function hidSignTransaction(index, tx, curve, input, inputs, timeout = 100000) {
+    return await hidCommand(jsonToArray({Command: 'SignTransaction', Tx: tx, Index: index, Curve: curve, Input: input + '/' + inputs, CmdId: rnd()}), timeout);
+}
+//-------------------------------------  Wallets commands  ----------------------------------------------------------------
 
-	if (ret) {
-		return arrayToJson(ret);
-    }
 
-	return { Error: 'USB command error' };
+
+//-------------------------------------  Settings commands  ---------------------------------------------------------------
+async function hidGetSettings(timeout = 1000) {
+	return await hidCommand(jsonToArray({Command: 'GetSettings', CmdId: rnd()}), timeout);
 }
 
-async function hidClearMemory(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "ClearMemory", CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidSetSettings(settings, timeout = 40000) {
+    return await hidCommand(jsonToArray(Object.assign({Command: 'SetSettings', CmdId: rnd()}, settings)), timeout);
 }
 
-async function hidBackupKey(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "BackupKey", CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidClearMemory(timeout = 60000) {
+	return await hidCommand(jsonToArray({Command: 'ClearMemory', CmdId: rnd()}), timeout);
 }
 
-async function hidBackupReadBlock(addr, size, timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "BackupBlockRead", Addr: addr, Size: size, CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidBackupKey(timeout = 60000) {
+	return await hidCommand(jsonToArray({Command: 'BackupKey', CmdId: rnd()}), timeout);
 }
 
-async function hidBackupWriteBlock(addr, size, hex_data, timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "BackupBlockWrite", Addr: addr, Size: size, Data: hex_data, CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
-}
-//-------------------------------------  Settings functions  --------------------------------------------------------------
-
-
-//-------------------------------------  Boot functions  ------------------------------------------------------------------
-async function hidSetBootMode(timeout) {
-	let ret = await hidCommand(jsonToArray({ Command: "SetBootMode", CmdId: rnd() }), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidBackupReadBlock(addr, size, timeout = 3000) {
+	return await hidCommand(jsonToArray({Command: 'BackupBlockRead', Addr: addr, Size: size, CmdId: rnd()}), timeout);
 }
 
-async function hidRestart(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "Restart", CmdId: rnd()}), timeout);
+async function hidBackupWriteBlock(addr, size, hexData, timeout = 5000) {
+	return await hidCommand(jsonToArray({Command: 'BackupBlockWrite', Addr: addr, Size: size, Data: hexData, CmdId: rnd()}), timeout);
+}
+//-------------------------------------  Settings commands  ---------------------------------------------------------------
 
-	if (ret) {
-		return arrayToJson(ret);
-    }
 
-	return { Error: 'USB command error' };
+
+//-------------------------------------  Boot commands  -------------------------------------------------------------------
+async function hidSetBootMode(timeout = 5000) {
+	return await hidCommand(jsonToArray({Command: 'SetBootMode', CmdId: rnd()}), timeout);
 }
 
-async function hidSetFirmwareMode(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "ExitBoot", CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidRestart(timeout = 3000) {
+	return await hidCommand(jsonToArray({Command: 'Restart', CmdId: rnd()}), timeout);
 }
 
-async function hidBootWriteBlock(addr, size, hex_data, timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "BootWrite", Addr: addr, Size: size, Data: hex_data, CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidSetFirmwareMode(timeout = 3000) {
+	return await hidCommand(jsonToArray({Command: 'ExitBoot', CmdId: rnd()}), timeout);
 }
 
-async function hidBootCheckFirmware(timeout) {
-	let ret = await hidCommand(jsonToArray({Command: "BootCheckFirmware", CmdId: rnd()}), timeout);
-
-	if (ret) {
-		return arrayToJson(ret);
-    }
-
-	return { Error: 'USB command error' };
+async function hidBootWriteBlock(addr, size, hex_data, timeout = 5000) {
+	return await hidCommand(jsonToArray({Command: 'BootWrite', Addr: addr, Size: size, Data: hex_data, CmdId: rnd()}), timeout);
 }
 
-async function firmwareDownload(serial, timeout) {
-	return new Promise((resolve) => {
-		let ret = false;
-		let req = new XMLHttpRequest();
-		let tmr = setTimeout(() => { req.abort(); resolve(ret) }, timeout);
-		
-		req.responseType = "arraybuffer";
-		req.open('GET', 'https://wallet.security-arts.com/firmware.php?&rnd=' + Math.random() + '&serial=' + serial, true);
-		req.onload = () => {
-			ret = req.response;
-			clearTimeout(tmr);
-			resolve(ret);
-		};
-		
-		req.onerror = () =>	{
-			clearTimeout(tmr);
-			resolve(ret);
-		};
-		
-		req.send();
-	});
+async function hidBootCheckFirmware(timeout = 1000) {
+	return await hidCommand(jsonToArray({Command: 'BootCheckFirmware', CmdId: rnd()}), timeout);
 }
-
-function firmwareVersion(serial, timeout) {
-	return new Promise((resolve) => {
-		let req = new XMLHttpRequest();
-		let ret = { 'FirmwareVersion': 0.0 };
-		let tmr = setTimeout(() => {req.abort(); resolve(ret)}, timeout);
-		
-		req.responseType = 'json';
-		req.open('GET', 'https://wallet.security-arts.com/firmware.php?version=true&serial=' + serial + '&rnd=' + Math.random(), true);
-		req.onload = () =>	{
-			clearTimeout(tmr);
-			try 
-			{
-				ret = JSON.parse(req.response.data);
-				resolve(ret);
-			} catch(e) {
-				resolve(ret)
-			}
-		};
-		
-		req.onerror = () =>	{
-			clearTimeout(tmr);
-			resolve(ret);
-		};
-		
-		req.send();
-	});
-}
-//-------------------------------------  Boot functions  ------------------------------------------------------------------
+//-------------------------------------  Boot commands  -------------------------------------------------------------------
 

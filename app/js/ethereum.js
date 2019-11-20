@@ -19,6 +19,7 @@ const walletGetEthCoinParameters = (coin, testnet) => {
 	switch (coin) {
 		case 'ETH': if (testnet) return coinPrmEthTestNet; else return coinPrmEth; break;
 	}
+	
 	return coinEthUnknown;
 };
 
@@ -131,11 +132,13 @@ function ethereumFee(price, limit)
 	} catch (err) {
 		return false;
 	}
+	
 	return fee;
 }
 
 async function ethereumGetTransactionCount(addr, testnet, timeout) {
 	return new Promise((resolve) => {
+		
 		let tmr = setTimeout(() => resolve(false), timeout);
 		
 		$.get(ethereumApiAddrUnspent, {coin: "ETH", addr: addr, testnet: testnet, rnd: rnd()}).then((data) => {
@@ -160,17 +163,17 @@ async function ethereumGenerateTransaction(addrFrom, addrTo, amount, gasPrice, g
 		
 		let Tx;
 		let v = (testnet ? '0x29' : '0x25');
-		
+	
 		let txParam = {
 			nonce: '0x' + txCount.toString(16),
 			gasPrice: '0x' + gasPrice.toString(16),
 			gasLimit: '0x' + gasLimit.toString(16),
 			value: '0x' + amount.toString(16),
 			to: addrTo,
-			data: '',
+			data: '0x00',
 			v: v
 		};
-	
+		
 		if (!testnet) {
 			Tx = new EthereumTx(txParam);
 		} else {
@@ -241,6 +244,6 @@ async function ethereumPushTx(tx, testnet, timeout) {
 			clearTimeout(tmr);
 			resolve('Server respone error');
 		});
-	});
+	}).catch(() => null);
 }
 

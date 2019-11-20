@@ -1,8 +1,6 @@
 'use strict';
 
-const rippleKeypairs = require("ripple-keypairs");
 const rippleBinary = require("ripple-binary-codec");
-const rippleHashes = require("ripple-hashes");
 const rippleAddrCodec = require('ripple-address-codec');
 
 const rippleApiAddrFee = 		'https://wallet.security-arts.com/api/getfee/';
@@ -31,8 +29,9 @@ function rippleEncodeTxForSigning(tx) {
 	return rippleBinary.encodeForSigning(tx);
 }
 
-function rippleIsAddressValid(addr) {
-	return rippleAddrCodec.isValidAddress(addr);
+function rippleIsAddressValid(addr, testnet) {
+	let xAddr = rippleAddrCodec.classicAddressToXAddress(addr, false, testnet);
+	return rippleAddrCodec.isValidXAddress(xAddr);
 }
 
 

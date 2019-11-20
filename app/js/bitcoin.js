@@ -1,4 +1,5 @@
 'use strict';
+
 const bitcoin = require('bitcoinjs-lib');
 const coinSelect = require('coinselect');
 
@@ -7,8 +8,8 @@ const bitcoinApiAddrRate =			'https://wallet.security-arts.com/api/getrate/';
 const bitcoinApiAddrPushTx =		'https://wallet.security-arts.com/api/pushtx/';
 const bitcoinApiAddrUnspent =		'https://wallet.security-arts.com/api/unspent/';
 const bitcoinApiAddrBalance =		'https://wallet.security-arts.com/api/addressbalance/';
-const bitcoinApiAddrMarketData =	'https://wallet.security-arts.com/api/getmarketdata/';
 const bitcoinApiAddrCoinInfo =		'https://wallet.security-arts.com/api/getcoininfo/';
+const bitcoinApiAddrMarketData =	'https://wallet.security-arts.com/api/getmarketdata/';
 
 
 const coinPrmBtc = 			{name: 'Bitcoin',			ticker: 'BTC',	fee: 50,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'btc.png',		explorer: 'https://blockchain.com/btc/address/'};
@@ -31,26 +32,27 @@ const coinPrmPivx =			{name: 'Pivx',				ticker: 'PIVX',	fee: 50, 	feeType: 'Fee'
 const coinPrmXsn =			{name: 'XSN Stakenet',		ticker: 'XSN',	fee: 2,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		explorer: 'https://xsnexplorer.io/addresses/'};
 const coinUnknown =			{name: 'Unknown',			ticker: '',		fee: 0, 	feeType: 'Fee',	feeName: '',				img: 'none.png',	explorer: 'https://google.com/search?q='};
 
+
 const walletGetNetType = (coin, testnet) => {
 	switch (coin) {
-		case 'BTC':		if (testnet) return bitcoinNetworks.testnet; else return bitcoinNetworks.bitcoin; break;
-		case 'XSN':		if (testnet) return bitcoinNetworks.xsn_testnet; else return bitcoinNetworks.xsn; break;
-		case 'LTC':		if (testnet) return bitcoinNetworks.litecoin_testnet; else return bitcoinNetworks.litecoin; break;
-		case 'DASH':	if (testnet) return bitcoinNetworks.dash_testnet; else return bitcoinNetworks.dash; break;
-		case 'DOGE':	if (testnet) return bitcoinNetworks.dogecoin_testnet; else return bitcoinNetworks.dogecoin; break;
-		case 'ZEC':		if (testnet) return bitcoinNetworks.zcash_testnet; else return bitcoinNetworks.zcash; break;
+		case 'BTC':		if (testnet) return bitcoinNetworks.testnet; 			else return bitcoinNetworks.bitcoin; break;
+		case 'XSN':		if (testnet) return bitcoinNetworks.xsn_testnet; 		else return bitcoinNetworks.xsn; break;
+		case 'LTC':		if (testnet) return bitcoinNetworks.litecoin_testnet; 	else return bitcoinNetworks.litecoin; break;
+		case 'DASH':	if (testnet) return bitcoinNetworks.dash_testnet; 		else return bitcoinNetworks.dash; break;
+		case 'DOGE':	if (testnet) return bitcoinNetworks.dogecoin_testnet; 	else return bitcoinNetworks.dogecoin; break;
+		case 'ZEC':		if (testnet) return bitcoinNetworks.zcash_testnet; 		else return bitcoinNetworks.zcash; break;
 	}
 	return false;
 };
 
 const walletGetCoinParameters = (coin, testnet) => {
 	switch (coin) {
-		case 'BTC':		if (testnet) return coinPrmBtcTestNet; else return coinPrmBtc; break;
-		case 'XSN':		if (testnet) return coinPrmXsn; else return coinPrmXsn; break;
-		case 'LTC':		if (testnet) return coinPrmLtcTestNet; else return coinPrmLtc; break;
-		case 'DASH':	if (testnet) return coinPrmDashTestNet; else return coinPrmDash; break;										
-		case 'DOGE':	if (testnet) return coinPrmDogeTestNet; else return coinPrmDoge; break;
-		case 'ZEC':		if (testnet) return coinPrmZcashTestNet; else return coinPrmZcash; break;
+		case 'BTC':		if (testnet) return coinPrmBtcTestNet; 		else return coinPrmBtc; break;
+		case 'XSN':		if (testnet) return coinPrmXsn; 			else return coinPrmXsn; break;
+		case 'LTC':		if (testnet) return coinPrmLtcTestNet; 		else return coinPrmLtc; break;
+		case 'DASH':	if (testnet) return coinPrmDashTestNet; 	else return coinPrmDash; break;										
+		case 'DOGE':	if (testnet) return coinPrmDogeTestNet; 	else return coinPrmDoge; break;
+		case 'ZEC':		if (testnet) return coinPrmZcashTestNet; 	else return coinPrmZcash; break;
 	}
 	return coinUnknown;
 };
