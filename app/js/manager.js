@@ -350,6 +350,7 @@ async function firmwareUpdateSetBootMode(serial, stat, timeout) {
 			await sleep(500);
 		
 			if (await waitDevice(serial, 5000)) {
+				await sleep(500);
 				return await hidInitChannel(timeout);
 			}
 		break
