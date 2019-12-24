@@ -57,11 +57,11 @@ function usbError(error, code) {
 
 function rndArray(len) {
 	let buff = [];
-	
+
 	while (len--) {
 		buff.push(Math.floor(Math.random() * 0x100));
 	}
-	
+
 	return buff;
 }
 
@@ -72,7 +72,7 @@ function compareArrays(arr1, arr2, len)
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -82,7 +82,7 @@ function jsonToArray(json) {
 
 function arrayToJson(arr) {
 	arr = arr.map((item) => String.fromCharCode(item)).join('');
-	
+
 	try {
 		return JSON.parse(arr);
 	} catch(e) {
@@ -124,9 +124,9 @@ function hidSetHandlers(onConnectHandler = false, onDisconnectHandler = false) {
 }
 
 async function hidFindDevice(serial = 0) {
-	
+
 	deviceMode = USB_DEV_MODE_DISCONNECTED;
-	
+
 	if (deviceHandler) {
 		try {
 			deviceHandler.close();
@@ -134,10 +134,10 @@ async function hidFindDevice(serial = 0) {
 			return USB_DEV_MODE_DISCONNECTED;
 		}
 	}
-	
+
 	await sleep(100);
 	deviceHandler = HID.devices().find((d) => {
-		
+
 		if ((d.vendorId === USB_VID) && (serial === d.serialNumber || serial === 0))
 		{
 			deviceSerial = d.serialNumber;
@@ -145,22 +145,22 @@ async function hidFindDevice(serial = 0) {
 				case USB_PID_HID:
 					deviceMode = USB_DEV_MODE_HID;
 					return true;
-					
+
 				case USB_PID_BOOT:
 					deviceMode = USB_DEV_MODE_BOOT;
 					return true;
-					
+
 				case USB_PID_KBD:
 					deviceMode = USB_DEV_MODE_KBD;
 					return false;
-						
+
 				case USB_PID_U2F:
 					deviceMode = USB_DEV_MODE_U2F;
 					return false;
 			}
 		}
 	});
-	
+
 	if (deviceHandler) {
 		try {
 			await sleep(100);
@@ -168,24 +168,24 @@ async function hidFindDevice(serial = 0) {
 			if (!deviceHandler) {
 				deviceMode = USB_DEV_MODE_DISCONNECTED;
 			}
-			
+
 		} catch (err) {
 			deviceHandler = false;
 			deviceMode = USB_DEV_MODE_DISCONNECTED;
 			return deviceMode;
 		}
 	}
-	
+
 	return deviceMode;
 }
 
 function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
-	
+
 	deviceSerial = 0;
 	deviceHandler = false;
 	deviceMode = USB_DEV_MODE_DISCONNECTED;
 	handlersFncEnabled = true;
-	
+
 	if (onConnectHandler) {
 	    handlersFncOnConnectFnc = onConnectHandler;
     }
@@ -193,11 +193,11 @@ function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
 	if (onDisconnectHandler) {
 	    handlersFncOnDisconnectFnc = onDisconnectHandler;
     }
-	
+
 	detect.startMonitoring();	
 	detect.on('add:' + USB_VID, async (d) => {
 		if (deviceMode === USB_DEV_MODE_DISCONNECTED) {
-			
+
 			await hidFindDevice();
 			if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
 				if (handlersFncOnConnectFnc && handlersFncEnabled) {
@@ -206,10 +206,10 @@ function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
 			}
 		}
 	});
-	
+
 	detect.on('remove:' + USB_VID, async (d) => {
 		if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
-			
+
 			if (deviceSerial === d.serialNumber) {
 				deviceSerial = 0;
 				deviceHandler = false;
@@ -229,7 +229,7 @@ function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
 function hidReadPacket(timeout) {
 	return new Promise((resolve, reject) => {
 		let tmr = setTimeout(() => reject(new usbError('USB read command timeout', ERR_USB_READ_TIMEOUT)), timeout);
-		
+
 		deviceHandler.read((err, data) => {
 			clearTimeout(tmr);
 
@@ -247,11 +247,11 @@ function hidReadPacket(timeout) {
 
 
 function hidWritePacket(buff) {
-	
+
 	if (process.platform === 'win32') {
 		buff.unshift(0);
 	}
-	
+
 	try {
 		return (deviceHandler.write(buff) !== 0);
 	} catch (err) {
@@ -262,12 +262,12 @@ function hidWritePacket(buff) {
 function hidWrite(cid, type, data) {
 	let txId = 0;
 	let txPtr = 0;
-	
+
 	let buff = [];
 	let size = data.length;
 	let sizeTx = Math.min(size, 57);
 	let tmp = data.slice(txPtr, sizeTx);
-	
+
 	buff[0] = (cid >> 24) & 0xFF;
 	buff[1] = (cid >> 16) & 0xFF;
 	buff[2] = (cid >> 8)  & 0xFF;
@@ -276,19 +276,19 @@ function hidWrite(cid, type, data) {
 	buff[5] = (size >> 8) & 0xFF;
 	buff[6] = (size >> 0) & 0xFF;
 	buff = buff.concat(tmp);
-	
+
 	if (!hidWritePacket(buff)) {
 	    return false;
     }
-	
+
 	size -= Math.min(size, sizeTx);
 	while (size && hidIsModeHID()) {
-		
+
 		txPtr += sizeTx;
 		sizeTx = Math.min(size, 59);
 		size -= sizeTx;
 		tmp = data.slice(txPtr, txPtr + sizeTx);
-			
+
 		buff = [];
 		buff[0] = (cid >> 24) & 0xFF;
 		buff[1] = (cid >> 16) & 0xFF;
@@ -301,7 +301,7 @@ function hidWrite(cid, type, data) {
 		    return false;
         }
 	}
-	
+
 	return true;
 }
 
@@ -310,20 +310,20 @@ async function hidRead(cid, type, timeout) {
 	let size = 0;
 	let rxId = 0;
 	let payload = [];
-	
+
 	while (hidIsModeHID()) {
-		
+
 		let buff = await hidReadPacket(timeout);
-		
+
 		let payloadType = buff[4];
 		let payloadSize = (buff[5] << 8) + buff[6];
 		let id = (buff[0] << 24) + (buff[1] << 16) + (buff[2] << 8) + buff[3];
-		
+
 		switch (payloadType) {
 			case PKT_ERR:
 				throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
 			    break;
-				
+
 			case PKT_CID:
 				if ((id === cid || id === -1) && (payloadType === type) && (payloadSize === 17)) {
 					return buff.slice(7, 7 + payloadSize);
@@ -331,7 +331,7 @@ async function hidRead(cid, type, timeout) {
 				    throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
                 }
 			    break;
-				
+
 			case PKT_DAT:
 				if ((id === cid) && (payloadType === type)){
 					rxId = 0;
@@ -345,7 +345,7 @@ async function hidRead(cid, type, timeout) {
 				    throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
                 }
 			    break;
-				
+
 			default:
 				if ((id === cid) && (payloadType === rxId)) {
 					if (size) {
@@ -359,24 +359,24 @@ async function hidRead(cid, type, timeout) {
 						continue;
 					}
 				}
-				
+
 				throw new usbError('HID packet error', ERR_USB_PACKET_ERROR);
 			    break;
 		}
 	}
-	
+
 	throw new usbError('USB Disconnected', ERR_USB_DISCONNECTED);
 }
 
 async function hidInitChannel(timeout) {
 	let buff = rndArray(8);
-	
+
 	commandInProgress = true;
 	commandChannelId = 0xFFFFFFFF;
-	
+
 	if (hidWrite(commandChannelId, PKT_CID, buff)) {
 		let data;
-		
+
 		try {
 			data = await hidRead(commandChannelId, PKT_CID, timeout);
 		} catch (err) {
@@ -384,14 +384,14 @@ async function hidInitChannel(timeout) {
 			commandInProgress = false;
 			return false;
 		}
-			
+
 		if (compareArrays(buff, data, buff.length)) {
 			commandChannelId = (data[8] << 24) | (data[9] << 16) | (data[10] << 8) | data[11];
 			commandInProgress = false;
 			return true;
 		}
 	}
-			
+
 	commandInProgress = false;
 	return false;
 }
@@ -403,26 +403,26 @@ async function hidInitChannel(timeout) {
 //-------------------------------------  Transaction layer  ---------------------------------------------------------------
 async function hidCommand(data, timeout) {
 	let ret;
-	
+
 	if (commandInProgress) {
 		return usbError('USB command in progress', ERR_USB_BUSY);
 	}
-		
+
 	commandInProgress = true;
 	if (hidWrite(commandChannelId, PKT_DAT, data)) {
-			
+
 		try {
 			ret = await hidRead(commandChannelId, PKT_DAT, timeout);
 		} catch (err) {
 			commandInProgress = false;
 			return err;
 		}
-		
+
 	} else {
 		commandInProgress = false;
 		return usbError ('USB write command error', ERR_USB_WRITE);
 	}
-			
+
 	commandInProgress = false;
 	return arrayToJson(ret);
 }
@@ -519,8 +519,8 @@ async function hidGetWalletPubKey(index, timeout = 2000) {
 	return await hidCommand(jsonToArray({Command: 'GetWalletPubKey', Index: index, CmdId: rnd()}), timeout);
 }
 
-async function hidSignTransaction(index, tx, curve, input, inputs, timeout = 100000) {
-    return await hidCommand(jsonToArray({Command: 'SignTransaction', Tx: tx, Index: index, Curve: curve, Input: input + '/' + inputs, CmdId: rnd()}), timeout);
+async function hidSignTransaction(index, tx, curve, input, inputs, inputAmount, timeout = 100000) {
+    return await hidCommand(jsonToArray({Command: 'SignTransaction', Tx: tx, Index: index, Curve: curve, Input: input + '/' + inputs, Amount: inputAmount, CmdId: rnd()}), timeout);
 }
 //-------------------------------------  Wallets commands  ----------------------------------------------------------------
 

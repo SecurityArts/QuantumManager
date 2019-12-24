@@ -1,5 +1,6 @@
 "use strict";
 
+const marketApiAddrMarketData =	'https://wallet.security-arts.com/api/getmarketdata/';
 
 let marketData = [];
 let marketSortCapDir = -1;
@@ -9,31 +10,29 @@ let marketSortVolumeDir = -1;
 let marketSortChangeDir = -1;
 let marketSortSymbolDir = -1;
 
-
-
 function marketSortData(sortType, direction) {
-	
+
 	switch (sortType) {
 		case 'name':
 			marketData.sort((a, b) => {return (b.name.localeCompare(a.name)) * direction});
 			break;
-		
+
 		case 'symbol':
 			marketData.sort((a, b) => {return (b.symbol.localeCompare(a.symbol)) * direction});
 			break;
-		
+
 		case 'price':
 			marketData.sort((a, b) => {return (b.price - a.price) * direction});
 			break;
-		
+
 		case 'cap':
 			marketData.sort((a, b) => {return (b.cap - a.cap) * direction});
 			break;
-		
+
 		case 'volume':
 			marketData.sort((a, b) => {return (b.volume - a.volume) * direction});
 			break;
-		
+
 		case 'change':
 			marketData.sort((a, b) => {return (b.change - a.change) * direction});
 			break;
@@ -41,7 +40,7 @@ function marketSortData(sortType, direction) {
 }
 
 async function marketShowData() {
-	
+
 	let i = 1;	
 	let rows = '';
 	let colors = ['#F8F8F8', '#FFFFFF'];
@@ -53,18 +52,18 @@ async function marketShowData() {
 		let volume = Number(item.volume).toFixed(0).replace(/\d(?=(\d{3})+$)/g, '$& ');
 		rows += `<tr style="background-color: ${colors[i & 1]}"><td>${i++}</td><td>${item.name}</td><td>${item.symbol}</td><td>$${price}</td><td>$${cap}</td><td>$${volume}</td><td>${change}%</td></tr>`;
 	});
-			
+
 	$('#table_market_data_body').html(rows);
 	uiShowSection('market');
 }
 
 async function marketGetData() {
-	
+
 	$('#table_market_data_body').html('');
-	$.get(bitcoinApiAddrMarketData).then((data) => {
-		
+	$.get(marketApiAddrMarketData).then((data) => {
+
 		data = strToJson(data);
-		
+
 		if (data.status.error_code === 0) {
 			let t = Date.parse(data.status.timestamp);
 
@@ -72,7 +71,7 @@ async function marketGetData() {
 				let d = new Date(t);
 				infoShow('Updated', d.toLocaleString(), 'info', 5000);
 			}
-			
+
 			marketData = [];
 			data.data.forEach((item) => {
 				marketData.push({
@@ -84,7 +83,7 @@ async function marketGetData() {
 					change: item.quote.USD.percent_change_24h
 				});
 			});
-			
+
 			marketSortCapDir = -1;
 			marketSortNameDir = -1;
 			marketSortPriceDir = -1;

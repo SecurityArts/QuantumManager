@@ -6,7 +6,7 @@ function modalValidateName(name) {
 		let regex = /^[a-zA-Z0-9\-\_\,\.\]\[\}\{\)\(\#\@ ]+$/g
 		return regex.test(name);
 	}
-	
+
 	return false;
 }
 //-------------------------------------  Helper functions  ----------------------------------------------------------------
@@ -16,7 +16,7 @@ function modalValidateName(name) {
 //-------------------------------------  General modals  ------------------------------------------------------------------
 function modalYesNo(textCancel, textYes, textTitle, textBody) {
 	return new Promise((resolve) => {
-	
+
 		let ret = false;
 
 		if (textCancel == '') {
@@ -24,34 +24,34 @@ function modalYesNo(textCancel, textYes, textTitle, textBody) {
 		} else {
 			$('#modal_yes_no_cancel').show();
 		}
-		
+
 		if (textYes == '') {
 			$('#modal_yes_no_ok').hide();
 		} else {
 			$('#modal_yes_no_ok').show();
 		}
-		
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				ret = true;
 				$('#modal_dialog_yes_no').modal('hide');
 			}
 		});
-		
+
 		$('#modal_yes_no_ok').unbind('click').on('click', () => {
 			ret = true;
 			$('#modal_dialog_yes_no').modal('hide');
 		});
-	  
+
 		$('#modal_yes_no_cancel').unbind('click').on('click', () => {
 			ret = false;
 			$('#modal_dialog_yes_no').modal('hide');
 		});
-		
+
 		$('#modal_dialog_yes_no').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
 			resolve(ret);
 		});
-										
+
 		$('#modal_yes_no_ok').text(textYes);
 		$('#modal_yes_no_text').html(textBody);
 		$('#modal_yes_no_title').text(textTitle);
@@ -62,37 +62,37 @@ function modalYesNo(textCancel, textYes, textTitle, textBody) {
 
 function modalEnterNumber(titleText) {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
-		
+
 		$('#modal_enter_number_ok').unbind('click').on('click', () => {
 			let val = parseInt($('#modal_enter_number_value').val());
-			
+
 			if (!isNaN(val)) {
 				ret = {Value: val};
 			}
-			
+
 			$('#modal_enter_number').modal('hide');
 		});
-		
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				$('#modal_enter_number_ok').click()
 			}
 		});
-	  
+
 		$('#modal_enter_number_cancel').unbind('click').on('click', () => {
 			$('#modal_enter_number').modal('hide');
 		});
-										
+
 		$('#modal_enter_number').unbind('shown.bs.modal').on('shown.bs.modal', () => {
 			$('#modal_enter_number_value').focus();
 		});
-		
+
 		$('#modal_enter_number').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
 			resolve(ret);
 		});
-										
+
 		$('#modal_enter_number_value').val('');
 		$('#modal_enter_number_title').text(titleText);
 		$('#modal_enter_number').modal();
@@ -101,19 +101,13 @@ function modalEnterNumber(titleText) {
 
 function modalAddUser(isAdmin) {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
-		
-		if (isAdmin) {
-			$('#modal_user_admin')
-				.prop('checked', true)
-				.prop('disabled', false);
-		} else {
-			$('#modal_user_admin')
-				.prop('checked', false)
-				.prop('disabled', true);
-		}
-		
+
+		$('#modal_user_admin')
+			.prop('checked', isAdmin)
+			.prop('disabled', !isAdmin);
+
 		$('#modal_user_name').removeClass('input_error');
 		$('#modal_user_name').unbind('change').on('change', () => {
 			if (!modalValidateName($('#modal_user_name').val())) {
@@ -122,24 +116,24 @@ function modalAddUser(isAdmin) {
 				$('#modal_user_name').removeClass('input_error');
 			}
 		});
-		
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				$('#modal_user_ok').click()
 			}
 		});
-										
+
 		$('#modal_user_ok').unbind('click').on('click', () => {
 			if (modalValidateName($('#modal_user_name').val())) {
 				ret = {
 					Name: $('#modal_user_name').val(),
 					Admin: $('#modal_user_admin').is(':checked')
 				};
-				
+
 				$('#modal_add_user').modal('hide');
 			}
 		});
-	  
+
 		$('#modal_user_cancel').unbind('click').on('click', () => {
 			$('#modal_add_user').modal('hide');
 		});
@@ -147,11 +141,11 @@ function modalAddUser(isAdmin) {
 		$('#modal_add_user').unbind('shown.bs.modal').on('shown.bs.modal', () => {
 			$('#modal_user_name').focus();
 		});		
-		
+
 		$('#modal_add_user').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
 			resolve(ret);
 		});
-		
+
 		$('#modal_user_name').val('');
 		$('#modal_add_user').modal();
 	});
@@ -162,7 +156,7 @@ function modalAddUser(isAdmin) {
 
 //-------------------------------------  Passwords modals  ----------------------------------------------------------------
 function modalAddPasswordHandleEnter(str, addEnter) {
-	
+
 	if (addEnter) {
 		if (str.length < 2 || (str.length >= 2 && (str.lastIndexOf('\\r') !== (str.length - 2)))) {
 			str += '\\r';
@@ -178,10 +172,10 @@ function modalAddPasswordHandleEnter(str, addEnter) {
 
 function modalAddPassword() {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
 		let addEnter = false;
-										
+
 		$('#modal_pass_url').val('');
 		$('#modal_pass_data').val('');
 		$('#modal_pass_name').val('');
@@ -189,25 +183,25 @@ function modalAddPassword() {
 		$('#modal_pass_data2').val('');
 		$('#modal_pass_login').val('');
 		$('#modal_pass_login2').val('');
-		
+
 		$('#modal_pass_rnd_len').val('');
 		$('#modal_pass_card1_num').val('');
 		$('#modal_pass_card1_holder').val('');
 		$('#modal_pass_card1_date').val('');
 		$('#modal_pass_card1_cvv').val('');
-		
+
 		$('#modal_pass_card2_num').val('');
 		$('#modal_pass_card2_date').val('');
 		$('#modal_pass_card2_cvv').val('');
-		
+
 		$('#modal_pass_opt1').prop('checked', true);
 		$('#modal_pass_opt2').prop('checked', true);
 		$('#modal_pass_opt3').prop('checked', true);
 		$('#modal_pass_opt4').prop('checked', false);
 		$('#modal_pass_gen_enter').prop('checked', false);
 		$('#modal_pass_name').removeClass('input_error');
-		
-		
+
+
 		$('#modal_pass_name').unbind('change').on('change', () => {
 			if (!modalValidateName($('#modal_pass_name').val())) {
 				$('#modal_pass_name').addClass('input_error');
@@ -215,40 +209,39 @@ function modalAddPassword() {
 				$('#modal_pass_name').removeClass('input_error');
 			}
 		});
-		
 
 		$('#modal_pass_login').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_login').val() + '\\t' + $('#modal_pass_data1').val();
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_login2').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
 
 		$('#modal_pass_data1').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_login').val() + '\\t' + $('#modal_pass_data1').val();
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_data2').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_url').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
 
@@ -256,10 +249,10 @@ function modalAddPassword() {
 			let userData = $('#modal_pass_data').val();
 			addEnter = $('#modal_pass_gen_enter').is(':checked');
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			
+
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		//---------------  Credit card1  --------------------------
 		$('#modal_pass_card1_num').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
@@ -268,7 +261,7 @@ function modalAddPassword() {
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_card1_holder').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
@@ -276,7 +269,7 @@ function modalAddPassword() {
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_card1_date').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
@@ -284,7 +277,7 @@ function modalAddPassword() {
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_card1_cvv').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
@@ -293,8 +286,8 @@ function modalAddPassword() {
 			$('#modal_pass_data').val(handler);
 		});
 		//---------------  Credit card1  --------------------------
-		
-		
+
+
 		//---------------  Credit card2  --------------------------
 		$('#modal_pass_card2_num').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
@@ -303,7 +296,7 @@ function modalAddPassword() {
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_card2_date').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
 							 $('#modal_pass_card2_date').val() + '\\t' + $('#modal_pass_card2_cvv').val();
@@ -311,7 +304,7 @@ function modalAddPassword() {
 			const handler = modalAddPasswordHandleEnter(userData, addEnter);
 			$('#modal_pass_data').val(handler);
 		});
-		
+
 		$('#modal_pass_card2_cvv').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
 							 $('#modal_pass_card2_date').val() + '\\t' + $('#modal_pass_card2_cvv').val();
@@ -320,11 +313,11 @@ function modalAddPassword() {
 			$('#modal_pass_data').val(handler);
 		});
 		//---------------  Credit card2  --------------------------
+
 		
-		
-		
+
 		$('#modal_pass_type').unbind('change').on('change', () => {
-			
+
 			switch ($('#modal_pass_type').val()) {
 				case 'Password':
 					$('#modal_pass_type_rdn').hide();
@@ -335,7 +328,7 @@ function modalAddPassword() {
 					$('#modal_pass_type_gen_enter').show();
 					$('#modal_pass_type_pass').show();
 					break;
-				
+
 				case 'Random password':
 					$('#modal_pass_type_pass').hide();
 					$('#modal_pass_type_log_pass').hide();
@@ -345,7 +338,7 @@ function modalAddPassword() {
 					$('#modal_pass_type_log_pass_url').hide();
 					$('#modal_pass_type_rdn').show();
 					break;
-				
+
 				case 'Login and Password':
 					$('#modal_pass_type_rdn').hide();
 					$('#modal_pass_type_pass').hide();
@@ -355,7 +348,7 @@ function modalAddPassword() {
 					$('#modal_pass_type_gen_enter').show();
 					$('#modal_pass_type_log_pass').show();
 					break;
-					
+
 				case 'Login and Password + URL':
 					$('#modal_pass_type_rdn').hide();
 					$('#modal_pass_type_pass').hide();
@@ -365,7 +358,7 @@ function modalAddPassword() {
 					$('#modal_pass_type_log_pass_url').show();
 					$('#modal_pass_type_gen_enter').show();
 					break;
-					
+
 				case 'Credit Card 1':
 					$('#modal_pass_type_rdn').hide();
 					$('#modal_pass_type_pass').hide();
@@ -375,7 +368,7 @@ function modalAddPassword() {
 					$('#modal_pass_type_log_pass_url').hide();
 					$('#modal_pass_type_credit_card1').show();
 					break;
-					
+
 				case 'Credit Card 2':
 					$('#modal_pass_type_rdn').hide();
 					$('#modal_pass_type_pass').hide();
@@ -387,34 +380,34 @@ function modalAddPassword() {
 					break;
 			}
 		}).val('Password').change();
-																			
+
 		$('#modal_pass_ok')
 			.unbind('click')
 			.on('click', () => {
-				
+
 				if (modalValidateName($('#modal_pass_name').val())) {
 					ret = false;
 
 					if ($('#modal_pass_type').val() === 'Random password' && $('#modal_pass_rnd_len').val()) {
-						
+
 						let options = 0;
-						
+
 						if ($('#modal_pass_opt1').is(':checked')) {
 							options |= (1 << 0);
 						}
-						
+
 						if ($('#modal_pass_opt2').is(':checked')) {
 							options |= (1 << 1);
 						}
-						
+
 						if ($('#modal_pass_opt3').is(':checked')) {
 							options |= (1 << 2);
 						}
-						
+
 						if ($('#modal_pass_opt4').is(':checked')) {
 							options |= (1 << 3);
 						}
-						
+
 						ret = {
 							Symbols: options,
 							Name: $('#modal_pass_name').val(),
@@ -428,54 +421,54 @@ function modalAddPassword() {
 							};
 						}
 					}
-					
+
 					$('#modal_pass_data').val('');
 					$('#modal_pass_name').val('');
 					$('#modal_add_pass').modal('hide');
 				}
 			});
-			
-		
+
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				$('#modal_pass_ok').click()
 			}
 		});
-	  
+
 		$('#modal_pass_cancel').unbind('click').on('click', () => {
 			$('#modal_add_pass').modal('hide');
 		});
-		
+
 		$('#modal_add_pass').unbind('shown.bs.modal').on('shown.bs.modal', () => {
 			$('#modal_pass_name').focus();
 		});
-										
+
 		$('#modal_add_pass').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
 			resolve(ret);
 		});
-		
+
 		$('#modal_add_pass').modal();
 	});
 }
 
 function modalAdd2FA(textCancel, textYes, textTitle) {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
 
 		$('#modal_add_2fa_type').val('U2F');
 		$('#modal_add_2fa_key').val('').prop('disabled', true);
-		
+
 		$('#modal_add_2fa_type')
 			.unbind('click')
 			.on('click', () => {
 				$('#modal_add_2fa_key').prop('disabled', ($('#modal_add_2fa_type').val() == 'U2F'));
 			});
-												
+
 		$('#modal_add_2fa_ok')
 			.unbind('click')
 			.on('click', () => {
-				
+
 				if (($('#modal_add_2fa_type').val() == 'U2F') || $('#modal_add_2fa_key').val()) {
 					ret = {
 						Type: $('#modal_add_2fa_type').val(),
@@ -486,21 +479,21 @@ function modalAdd2FA(textCancel, textYes, textTitle) {
 					$('#modal_add_2fa').modal('hide');
 				}
 			});
-		
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				$('#modal_add_2da_ok').click()
 			}
 		});
-	  
+
 		$('#modal_add_2fa_cancel').unbind('click').on('click', () => {
 			$('#modal_add_2fa').modal('hide');
 		});
-										
+
 		$('#modal_add_2fa').unbind('hidden.bs.modal').on('hidden.bs.modal', (e) => {
 			resolve(ret);
 		});
-										
+
 		$('#modal_add_2da_ok').text(textYes);
 		$('#modal_add_2fa_title').text(textTitle);
 		$('#modal_add_2fa_cancel').text(textCancel);
@@ -514,21 +507,21 @@ function modalAdd2FA(textCancel, textYes, textTitle) {
 //-------------------------------------  Wallet modals  -------------------------------------------------------------------
 function modalAddWallet() {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
 		let segwit = ['BTC'];
-		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'XRP', 'ZEC', 'ETH'];
-										
+		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'BCH', 'XRP', 'ETH'];
+
 		$('#modal_wallet_key')
 			.val('')
 			.prop('disabled', false);
-			
+
 		$('#modal_wallet_name').val('');
 		$('#modal_wallet_segwit').prop('checked', false);
 		$('#modal_wallet_testnet')
 			.prop('checked', false)
 			.prop('disabled', false);
-			
+
 		$('#modal_wallet_name').removeClass('input_error');
 		$('#modal_wallet_name').unbind('change').on('change', () => {
 			if (!modalValidateName($('#modal_wallet_name').val())) {
@@ -539,28 +532,20 @@ function modalAddWallet() {
 		});
 
 		$('#modal_wallet_type')
-			.val('BTC')
+			.val('Bitcoin - (BTC)')
 			.unbind('change').on('change', () => {
-				
-				let val = $('#modal_wallet_type').val();
-												
-				if (segwit.indexOf(val) >= 0) {
-					$('#modal_wallet_segwit')
-						.prop('checked', false)
-						.prop('disabled', false);
-				} else {
-					$('#modal_wallet_segwit')
-						.prop('checked', false)
-						.prop('disabled', true);
-				}
-												
-				if (testnet.indexOf(val) >= 0) {
-					$('#modal_wallet_testnet').prop('disabled', false);
-				} else {
-					$('#modal_wallet_testnet')
-						.prop('checked', false)
-						.prop('disabled', true);
-				}
+
+				let val = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
+				let isSegWit = (segwit.indexOf(val) >= 0);
+				let isTestNet = (testnet.indexOf(val) >= 0);
+
+				$('#modal_wallet_segwit')
+					.prop('checked', false)
+					.prop('disabled', !isSegWit);
+
+				$('#modal_wallet_testnet')
+					.prop('checked', false)
+					.prop('disabled', !isTestNet);
 			});
 
 		$('#modal_wallet_rnd')
@@ -572,33 +557,35 @@ function modalAddWallet() {
 		$('#modal_wallet_ok' )
 			.unbind('click')
 			.on('click', () => {
-				
+
 				if (modalValidateName($('#modal_wallet_name').val())) {
+
 					let options = {};
-					
+					let coin = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
+
 					if ($('#modal_wallet_rnd').is(':checked')) options = Object.assign(options, {Rnd: true});
 					if ($('#modal_wallet_segwit').is(':checked')) options = Object.assign(options, {SegWit: true});
 					if ($('#modal_wallet_testnet').is(':checked')) options = Object.assign(options, {TestNet: true});
-					
+
 					ret = {
 						Options: options,
 						Name: $('#modal_wallet_name').val(),
 						Key: $('#modal_wallet_key').val(),
-						Type: $('#modal_wallet_type').val()
+						Type: coin
 					};
-					
+
 					$('#modal_wallet_key').val('');
 					$('#modal_wallet_name').val('');
 					$('#modal_add_wallet').modal('hide');
 				}
 			});
-			
+
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
 				$('#modal_wallet_ok').click()
 			}
 		});
-	  
+
 		$('#modal_wallet_cancel').unbind('click').on('click', () => {
 			$('#modal_add_wallet').modal('hide');
 		});
@@ -610,7 +597,7 @@ function modalAddWallet() {
 		$('#modal_add_wallet').unbind('shown.bs.modal').on('shown.bs.modal', () => {
 			$('#modal_wallet_name').focus();
 		});
-										
+
 		$('#modal_add_wallet').modal();
 	});
 }
@@ -619,17 +606,16 @@ function modalAddWallet() {
 
 
 //-------------------------------------  Transaction modal  ---------------------------------------------------------------
-function modalTransactionSetTx(tx) {
-	$('#modal_tarnsaction_transaction').text(tx);
-}
-
-function modalTransactionSetStatus(stat) {
+function modalTransactionSetStatus(stat, tx, enableCancel, enableBroadcast) {
 	$('#modal_tarnsaction_status').text(stat);
+	$('#modal_tarnsaction_transaction').text(tx);
+	$('#modal_transaction_btn_cancel').prop('disabled', !enableCancel);
+	$('#modal_transaction_btn_broadcast').prop('disabled', !enableBroadcast);
 }
 
-function modalTransactionEnable() {
+function modalTransactionEnableCancel() {
 	$('#modal_transaction_btn_cancel').prop('disabled', false);
-	$('#modal_transaction_btn_broadcast').prop('disabled', false);
+	$('#modal_transaction_btn_broadcast').prop('disabled', true);
 }
 
 function modalTransactionHide() {
@@ -638,33 +624,32 @@ function modalTransactionHide() {
 
 function modalTransactionShow(from, to, amount, fee, remainder, ticker, stat) {
 	return new Promise((resolve) => {
-		
+
 		$('#modal_tarnsaction_to').text(to);
 		$('#modal_tarnsaction_from').text(from);
-		$('#modal_tarnsaction_fee').text(fee + ticker);
 		$('#modal_tarnsaction_status').text(stat);
+		$('#modal_tarnsaction_fee').text(fee + ticker);
 		$('#modal_tarnsaction_amount').text(amount + ticker);
 		$('#modal_tarnsaction_balance').text(remainder + ticker);
 		$('#modal_tarnsaction_transaction').text('');
-		
+
 		$('#modal_transaction_btn_cancel').prop('disabled', true);
 		$('#modal_transaction_btn_broadcast').prop('disabled', true);
 		$('#modal_tarnsaction_collapse_btn').html('<span class="icon icon-down-open-big"></span>');
-		
-		
+
 		$('#modal_transaction_collapse')
 			.collapse('hide')
 			.unbind('hidden.bs.collapse').on('hidden.bs.collapse', () => {
-			$('#modal_tarnsaction_collapse_btn').html('<span class="icon icon-down-open-big"></span>');
-		})
+				$('#modal_tarnsaction_collapse_btn').html('<span class="icon icon-down-open-big"></span>');
+			})
 			.unbind('shown.bs.collapse').on('shown.bs.collapse', () => {
-			$('#modal_tarnsaction_collapse_btn').html('<span class="icon icon-up-open-big"></span>');
-		});
-		
+				$('#modal_tarnsaction_collapse_btn').html('<span class="icon icon-up-open-big"></span>');
+			});
+
 		$('#modal_tarnsaction_copy_tx').unbind('click').on('click', () => {
 			clipboard.writeText($('#modal_tarnsaction_transaction').text());
 		});
-		
+
 		$('#modal_transaction')
 			.unbind('shown.bs.modal')
 			.on('shown.bs.modal', () => resolve())
@@ -674,21 +659,21 @@ function modalTransactionShow(from, to, amount, fee, remainder, ticker, stat) {
 
 function modalTransactionWaitConfirm() {
 	return new Promise((resolve) => {
-		
+
 		$('#modal_transaction_btn_broadcast')
 			.unbind('click')
 			.on('click', () => {
 				modalTransactionHide();
 				resolve(true);
 			});
-			
+
 		$('#modal_transaction_btn_cancel')
 			.unbind('click')
 			.on('click', () => {
 				modalTransactionHide();
 				resolve(false);
 			});
-			
+
 		$(document)
 			.unbind('keyup')
 			.keyup((e) => {
@@ -697,7 +682,6 @@ function modalTransactionWaitConfirm() {
 					resolve(true);
 				}
 			});
-		
 	});
 }
 //-------------------------------------  Transaction modal  ---------------------------------------------------------------
@@ -871,11 +855,11 @@ function modalFwUpdateStartBtnSetHandler(handler, prm1, prm2) {
 
 function modalFwUpdateText(t, versionServer = '', versionFirmware = '') {
 	$('#modal_update_fw_text').html(t);
-	
+
 	if (versionServer !== '') {
 		$('#modal_update_fw_text').append('<br>Server firmware version: ' + versionServer.toFixed(2));
 	}
-	
+
 	if (versionFirmware !== '') {
 		$('#modal_update_fw_text').append('<br>Device firmware version: ' + versionFirmware.toFixed(2));
 	}
@@ -884,10 +868,10 @@ function modalFwUpdateText(t, versionServer = '', versionFirmware = '') {
 function modalFwUpdateShow(versionFirmware)
 {
 	return new Promise((resolve) => {
-		
+
 		$('#modal_update_fw_progress_bar').show();
 		$('#modal_update_fw_progress').css('width', 0 + '%').attr('aria-valuenow', 0);
-		
+
 		$('#modal_update_fw_text')
 			.text('Downloading firmware...')
 			.append('<br>Server firmware version: ...')
@@ -897,17 +881,17 @@ function modalFwUpdateShow(versionFirmware)
 			.hide()
 			.unbind('click')
 			.on('click', () => {$("#modal_update_fw").modal('hide')});
-			
+
 		$('#modal_update_fw_cancel')
 			.show()
 			.prop('disabled', false)
 			.unbind('click')
 			.on('click', () => {$("#modal_update_fw").modal('hide')});
-			
+
 		$('#modal_update_fw_start')
 			.show()
 			.prop('disabled', true);
-			
+
 		$(document)
 			.unbind('keyup')
 			.keyup((e) => {
@@ -942,15 +926,14 @@ function modalFwUpdateWait() {
 //-------------------------------------  Backup/restore modals  -----------------------------------------------------------
 function modalBackupRestoreShow(title) {
 	return new Promise((resolve) => {
-		
+
 		$('#modal_backup_title').text(title);
 		$('#modal_backup_progress').css('width', 0 + '%').attr('aria-valuenow', 0); 
-		
+
 		$("#modal_backup")
 			.unbind("shown.bs.modal")
 			.on("shown.bs.modal", () => resolve())
 			.modal({keyboard: false});
-		
 	});
 }
 
@@ -976,7 +959,7 @@ async function modalBackupRestoreProgress(p)
 //-------------------------------------  Device activation  ---------------------------------------------------------------
 function modalWaitActivationShow(serial) {
 	return new Promise((resolve) => {
-		
+
 		$.get('https://wallet.security-arts.com/api/activate/', {serial: serial, rnd: rnd()}).then((ret) =>	{
 			if (ret.code === 0) {
 				ret = ret.data.split(',');
@@ -984,7 +967,7 @@ function modalWaitActivationShow(serial) {
 				$('#modal_wait_activation_warranty').text('Warranty period ' + ret[2] + ' month starting from ' + ret[1]);
 			}
 		});
-	
+
 		$('#modal_wait_activation')
 			.unbind('shown.bs.modal')
 			.on('shown.bs.modal', () => resolve())

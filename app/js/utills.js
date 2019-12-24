@@ -3,22 +3,22 @@
 
 function hexStringToArray(hex) {
 	let arr = [];
-	
+
 	while (hex.length >= 2) {
 		arr.push(parseInt(hex.substring(0, 2), 16));
 		hex = hex.substring(2, hex.length);
 	}
-	
+
 	return arr;
 }
 
 function arrayToHexString(arr) {
 	let str = '';
-	
+
 	for (let i = 0; i < arr.length; i++) {
 		str += ((arr[i] < 16) ? '0' : '') + arr[i].toString(16);
 	}
-	
+
 	return str;
 }
 

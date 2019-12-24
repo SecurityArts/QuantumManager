@@ -167,7 +167,7 @@
 																		<div class="col-sm-11"><span id="wallet_type" class="panel-value"></span></div>
 
 																		<div class="col-sm-1"><span class="panel-text">Balance</span></div>
-																		<div class="col-sm-11"><span id="wallet_balance" class="panel-value"></span></div>
+																		<div class="col-sm-11"><span id="wallet_balance" class="panel-value" onclick="walletCopyBalance()"></span></div>
 
 																		<div class="col-sm-1"><span class="panel-text">Addr</span></div>
 																		<div class="col-sm-11"><span id="wallet_addr" class="panel-value" onclick="walletCopyAddr()"></span></div>
@@ -519,13 +519,14 @@
 							<div class="form-group">
 								<label for="modal_wallet_type">Wallet type</label>
 								<select class="form-control form-control-sm" id="modal_wallet_type">
-									<option>BTC</option>
-									<option>LTC</option>
-									<option>DASH</option>
-									<option>DOGE</option>
-									<option>XSN</option>
-									<option>XRP</option>
-									<option>ETH</option>
+									<option>Bitcoin - (BTC)</option>
+									<option>Ethereum - (ETH)</option>
+									<option>Litecoin - (LTC)</option>
+									<option>Bitcoin Cash - (BCH)</option>
+									<option>Ripple - (XRP)</option>
+									<option>Dash - (DASH)</option>
+									<option>Dogecoin - (DOGE)</option>
+									<option>Stakenet - (XSN)</option>
 								</select>
 							</div>
 							
@@ -1115,7 +1116,7 @@
 								</div>
 								
 								<div class="col-sm-8">
-									<br>Security Arts 2018-2019
+									<br>Security Arts 2018-2020
 									<br>For more information please visit
 									<br><a href="#" onclick="openExternalUrl('https://security-arts.com')">www.security-arts.com</a>
 									<br>Quantum Manager version: <span id="about_version"></span>
@@ -1131,12 +1132,12 @@
 				</div>
 			</div>
 			<!-- Modal about -->
-			
-			
+
+
 			<footer class="toolbar toolbar-footer draggable">
 			</footer>
 		</div>
-		
+
 
 		<script>
 			$ = window.$ = window.jQuery = require('jquery');
@@ -1145,7 +1146,7 @@
 			toastr = require('toastr');
 		</script>
 		<script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
-		
+
 		<script src="js/bitcoin-networks.js"></script>
 		<script src="js/modals.js"></script>
 		<script src="js/usbhid.js"></script>
@@ -1153,10 +1154,11 @@
 		<script src="js/bitcoin.js"></script>
 		<script src="js/ripple.js"></script>
 		<script src="js/ethereum.js"></script>
-		
+
 		<script src="js/utills.js"></script>
+		<script src="js/bignum.js"></script>
 		<script src="js/updates.js"></script>
-		
+
 		<script src="js/menu_general.js"></script>
 		<script src="js/menu_market.js"></script>
 		<script src="js/menu_settings.js"></script>

@@ -4,7 +4,7 @@
  "author": "SecurityArts",
  "description": "SecurityArts Quantum Manager",
  "main": "main.js",
- "version": "1.0.3",
+ "version": "1.0.4",
  "license": "MIT",
  "scripts": {
   "start": "electron .",
@@ -53,16 +53,16 @@
  },
  "devDependencies": {
   "electron": "^4.2.12",
-  "electron-builder": "^20.44.4"
+  "electron-builder": "^21.2.0"
  },
  "dependencies": {
   "auto-launch": "^5.0.5",
-  "big-integer": "^1.6.48",
-  "big.js": "^5.2.2",
   "bitcoinjs-lib": "^4.0.5",
+  "bitcore-lib-cash": "^8.13.0",
   "bootstrap": "^4.3.1",
   "bootstrap-material-design": "^4.1.2",
   "coinselect": "^3.1.11",
+  "decimal.js": "^10.2.0",
   "electron-store": "^4.0.0",
   "ethereumjs-common": "^1.4.0",
   "ethereumjs-tx": "^2.1.1",

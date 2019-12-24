@@ -1,58 +1,53 @@
 'use strict';
 
 const bitcoin = require('bitcoinjs-lib');
+const bitcore = require('bitcore-lib-cash');
 const coinSelect = require('coinselect');
 
-
-const bitcoinApiAddrRate =			'https://wallet.security-arts.com/api/getrate/';
 const bitcoinApiAddrPushTx =		'https://wallet.security-arts.com/api/pushtx/';
 const bitcoinApiAddrUnspent =		'https://wallet.security-arts.com/api/unspent/';
-const bitcoinApiAddrBalance =		'https://wallet.security-arts.com/api/addressbalance/';
-const bitcoinApiAddrCoinInfo =		'https://wallet.security-arts.com/api/getcoininfo/';
-const bitcoinApiAddrMarketData =	'https://wallet.security-arts.com/api/getmarketdata/';
 
 
-const coinPrmBtc = 			{name: 'Bitcoin',			ticker: 'BTC',	fee: 50,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'btc.png',		explorer: 'https://blockchain.com/btc/address/'};
-const coinPrmBtcTestNet = 	{name: 'Bitcoin Testnet',	ticker: 'BTC',	fee: 50,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'btc.png',		explorer: 'https://live.blockcypher.com/btc-testnet/address/'};
+const coinPrmBtc = 			{name: 'Bitcoin',				ticker: 'BTC',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000,	explorer: 'https://blockchain.com/btc/address/'};
+const coinPrmBtcTestNet = 	{name: 'Bitcoin Testnet',		ticker: 'BTC',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000,	explorer: 'https://blockchain.com/btctest/address/'};
 
-const coinPrmLtc = 			{name: 'LiteCoin',			ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		explorer: 'https://chain.so/address/LTC/'};
-const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',	ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		explorer: 'https://chain.so/address/LTCTEST/'};
+const coinPrmBch = 			{name: 'Bitcoin Cash',			ticker: 'BCH',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bch/address/'};
+const coinPrmBchTestNet = 	{name: 'Bitcoin Cash Testnet',	ticker: 'BCH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bchtest/address/'};
 
-const coinPrmDash =			{name: 'Dash',				ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	explorer: 'https://chain.so/address/DASH/'};
-const coinPrmDashTestNet = 	{name: 'Dash Testnet',		ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	explorer: 'https://chain.so/address/DASHTEST/'};
+const coinPrmLtc = 			{name: 'LiteCoin',				ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://insight.litecore.io/address/'};
+const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',		ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://testnet.litecore.io/address/'};
 
-const coinPrmDoge =  		{name: 'DogeCoin',			ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	explorer: 'https://dogechain.info/address/'};
-const coinPrmDogeTestNet = 	{name: 'DogeCoin Testnet',	ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	explorer: 'https://chain.so/address/DOGETEST/'};
+const coinPrmDash =			{name: 'Dash',					ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000,	explorer: 'https://insight.dashevo.org/insight/address/'};
+const coinPrmDashTestNet = 	{name: 'Dash Testnet',			ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000,	explorer: 'https://testnet-insight.dashevo.org/insight/address/'};
 
-const coinPrmZcash = 		{name: 'Zcash',				ticker: 'ZEC',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'zec.png',		explorer: 'https://chain.so/address/ZEC/'};
-const coinPrmZcashTestNet =	{name: 'Zcash Testnet',		ticker: 'ZEC',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'zec.png',		explorer: 'https://chain.so/address/ZECTEST/'};
+const coinPrmDoge =  		{name: 'DogeCoin',				ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000,	explorer: 'https://dogechain.info/address/'};
+const coinPrmDogeTestNet = 	{name: 'DogeCoin Testnet',		ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000,	explorer: 'https://chain.so/address/DOGETEST/'};
 
-const coinPrmBtg =			{name: 'Bitcoin Gold',		ticker: 'BTG',	fee: 50, 	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'btg.png',		explorer: 'https://btgexplorer.com/address/'};
-const coinPrmPivx =			{name: 'Pivx',				ticker: 'PIVX',	fee: 50, 	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'pivx.png',	explorer: 'https://chainz.cryptoid.info/pivx/address.dws?'};
-const coinPrmXsn =			{name: 'XSN Stakenet',		ticker: 'XSN',	fee: 2,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		explorer: 'https://xsnexplorer.io/addresses/'};
-const coinUnknown =			{name: 'Unknown',			ticker: '',		fee: 0, 	feeType: 'Fee',	feeName: '',				img: 'none.png',	explorer: 'https://google.com/search?q='};
+const coinPrmXsn =			{name: 'XSN Stakenet',			ticker: 'XSN',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000,	explorer: 'https://xsnexplorer.io/addresses/'};
+const coinPrmXsnTestNet =	{name: 'XSN Testnet',			ticker: 'XSN',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000,	explorer: 'https://xsnexplorer.io/addresses/'};
+
+const coinUnknown =			{name: 'Unknown',				ticker: '',		fee: 0, 	feeType: 'Fee',	feeName: '',				img: 'none.png',	fractions: 100000000,	explorer: 'https://google.com/search?q='};
 
 
-const walletGetNetType = (coin, testnet) => {
+const walletGetBtcNetType = (coin, testnet) => {
 	switch (coin) {
 		case 'BTC':		if (testnet) return bitcoinNetworks.testnet; 			else return bitcoinNetworks.bitcoin; break;
 		case 'XSN':		if (testnet) return bitcoinNetworks.xsn_testnet; 		else return bitcoinNetworks.xsn; break;
 		case 'LTC':		if (testnet) return bitcoinNetworks.litecoin_testnet; 	else return bitcoinNetworks.litecoin; break;
 		case 'DASH':	if (testnet) return bitcoinNetworks.dash_testnet; 		else return bitcoinNetworks.dash; break;
 		case 'DOGE':	if (testnet) return bitcoinNetworks.dogecoin_testnet; 	else return bitcoinNetworks.dogecoin; break;
-		case 'ZEC':		if (testnet) return bitcoinNetworks.zcash_testnet; 		else return bitcoinNetworks.zcash; break;
 	}
 	return false;
 };
 
-const walletGetCoinParameters = (coin, testnet) => {
+const walletGetBtcCoinParameters = (coin, testnet) => {
 	switch (coin) {
 		case 'BTC':		if (testnet) return coinPrmBtcTestNet; 		else return coinPrmBtc; break;
+		case 'BCH':		if (testnet) return coinPrmBchTestNet; 		else return coinPrmBch; break;
 		case 'XSN':		if (testnet) return coinPrmXsn; 			else return coinPrmXsn; break;
 		case 'LTC':		if (testnet) return coinPrmLtcTestNet; 		else return coinPrmLtc; break;
 		case 'DASH':	if (testnet) return coinPrmDashTestNet; 	else return coinPrmDash; break;										
 		case 'DOGE':	if (testnet) return coinPrmDogeTestNet; 	else return coinPrmDoge; break;
-		case 'ZEC':		if (testnet) return coinPrmZcashTestNet; 	else return coinPrmZcash; break;
 	}
 	return coinUnknown;
 };
@@ -66,12 +61,75 @@ const bitcoinValidateAddr = (addr, net) => {
 	}
 };
 
+const bitcoinCashValidateAddr = (addr, testnet) => {
+	let net = testnet ? 'testnet' : 'livened';
+
+	try {
+		let ret = bitcore.Address.isValid(addr, net);
+		return ret;
+	} catch (err) {
+		return false;
+	}
+};
+
+const bitcoinTxClearInputScripts = (tx, coin) => {
+	switch (coin) {
+		case 'BCH':
+			for (let i = 0; i < tx.inputs.length; i++) {
+				tx.inputs[i].setScript(bitcore.Script());
+			}
+			break;
+
+		default:
+			for (let i = 0; i < tx.ins.length; i++) {
+				tx.ins[i].script = bitcoin.script.compile([]);
+			}
+			break;
+	}
+}
+
+const bitcoinTxAddSignatures = (tx, signatures, coin) => {
+	switch (coin) {
+		case 'BCH':
+			for (let i = 0; i < tx.inputs.length; i++) {
+				tx.inputs[i].setScript(bitcore.Script.fromHex(signatures[i]));
+			}		
+			break;
+
+		default:
+			for (let i = 0; i < tx.ins.length; i++) {
+				tx.ins[i].script = bitcoin.script.compile(hexStringToArray(signatures[i]));
+			}
+			break;
+	}
+}
+
+const bitcoinTxSerialize = (tx, coin) => {
+	switch (coin) {
+		case 'BCH':
+			try {
+				let txSerial = tx.serialize({
+					disableDustOutputs: true,
+					disableIsFullySigned: true
+				});
+				return txSerial;
+			} catch (err) {
+				return false;
+			}
+			break;
+
+		default:
+			return tx.toHex();
+			break;
+	}
+}
+
 const bitcoinGetUnspentOutputs = async (coin, addr, testnet, timeout) => {
 	return new Promise((resolve) => {
-		
+
 		let ret = false;
 		let tmr = setTimeout(() => resolve(ret), timeout);
-		
+
 		$.get(bitcoinApiAddrUnspent, {coin: coin, addr: addr, testnet: testnet, confirmations: 1, rnd: rnd()}).then((utxos) => {
 			clearTimeout(tmr);
 			if (utxos && utxos.length) ret = utxos;
@@ -80,32 +138,32 @@ const bitcoinGetUnspentOutputs = async (coin, addr, testnet, timeout) => {
 			clearTimeout(tmr);
 			resolve(ret);
 		});
-	}).catch(() => null);
+	});
 };
 
 const bitcoinPushTx = async (coin, tx, testnet, timeout) => {
 	return new Promise((resolve) => {
-		
+
 		let tmr = setTimeout(() => resolve('Server respone timeout'), timeout);
-	
+
 		$.post(bitcoinApiAddrPushTx, {coin: coin, tx: tx, testnet: testnet}).done((result) => {
 			let ret = 'Unknown server response';
-			
+
 			clearTimeout(tmr);
 			if (result)	{
 				if (result.result) {
 					ret = true;
-				} else {
-					if (result.error) {
-						ret = result.error;
-					}
+				}
+
+				if (result.error) {
+					ret = result.error;
 				}
 			} 
-			
+
 			resolve(ret);
 		}).fail((err) => {
 			clearTimeout(tmr);
 			resolve('Server respone error');
 		});
-	}).catch(() => null);
+	});
 };

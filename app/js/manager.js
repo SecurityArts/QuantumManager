@@ -13,8 +13,6 @@ const autoLaunch = require('auto-launch');
 const electronStore = require('electron-store');
 
 
-
-
 //------------------------------------------------  Popover  ---------------------------------------------------------------
 function infoHide() {
 	toastr.clear();	
@@ -38,20 +36,20 @@ function infoShow(title = '', content = '', type = '', delay = 0) {
 		'hideMethod': 'slideUp',
 		'positionClass': 'toastr-container toast-bottom-right'
 	};
-	
+
 	switch (type) {
 		case 'info':
 			toastr.info(content, title);
 			break;
-			
+
 		case 'error':
 			toastr.error(content, title);
 			break;
-			
+
 		case 'warning':
 			toastr.warning(content, title);
 			break;
-			
+
 		case 'success':
 			toastr.success(content, title);
 			break;
@@ -69,7 +67,7 @@ function uiClose() {
 
 
 function uiShowSection(section = '') {
-	
+
 	if (section === 'last') {
 		if ($('#section_market').is(':visible')) section = 'market';
 		if ($('#section_general').is(':visible')) section = 'general';
@@ -78,14 +76,14 @@ function uiShowSection(section = '') {
 		if ($('#section_passwords').is(':visible')) section = 'passwords';
 		if (section === 'last') section = 'general';
 	}
-	
+
 	$('#section_wait').hide();
 	$('#section_market').hide();
 	$('#section_general').hide();
 	$('#section_wallets').hide();
 	$('#section_settings').hide();
 	$('#section_passwords').hide();
-	
+
 	switch (section) {
 		case 'wait': $('#section_wait').show(); break;
 		case 'market': $('#section_market').show(); break;
@@ -103,10 +101,10 @@ function uiShowSection(section = '') {
 //------------------------------------------------  Quantum Manager updates  -----------------------------------------------
 function downloadFile(fileURL, targetPath) {
 	return new Promise(function(resolve, reject) {
-		
+
 		let total_bytes = 0;
 		let received_bytes = 0;
-        
+
 		let req = request({
 			method: 'GET',
 			uri: fileURL
@@ -127,7 +125,7 @@ function downloadFile(fileURL, targetPath) {
 		req.on('end', function() {
 			resolve(true);
 		});
-		
+
 		req.on('error', function() {
 			resolve(false);
 		});
@@ -136,13 +134,13 @@ function downloadFile(fileURL, targetPath) {
 
 async function uiCheckSoftwareUpdates(localVersion) {
 	$.get('https://security-arts.com/downloads/software.json', {rnd: rnd()}).then(async (ret) => {
-		
+
 		let fileUrl = '';
 		let filePath = '';
 		let serverMsg = '';
 		let serverVersion = '0';
 		const app = remote.app;
-		
+
 		switch (process.platform) {
 			case 'win32':
 				serverVersion = ret.manager.windows;
@@ -150,14 +148,14 @@ async function uiCheckSoftwareUpdates(localVersion) {
 				fileUrl = 'https://security-arts.com/downloads/QuantumManager_win.msi';
 				filePath = app.getPath('userData') + '\\' + 'QuantumManager_win.msi';
 				break;
-				
+
 			case 'linux':
 				serverVersion = ret.manager.linux;
 				serverMsg = ret.manager.linux_msg_eng;
 				fileUrl = 'https://security-arts.com/downloads/QuantumManager_linux.AppImage';
 				filePath = app.getPath('userData') + '/' + 'QuantumManager_linux.AppImage';
 				break;
-				
+
 			case 'darwin':
 				serverVersion = ret.manager.mac;
 				serverMsg = ret.manager.mac_msg_eng;
@@ -165,17 +163,17 @@ async function uiCheckSoftwareUpdates(localVersion) {
 				filePath = app.getPath('userData') + '/' + 'QuantumManager_mac.dmg';
 				break;
 		}
-		
+
 		if (compareVersions(serverVersion, localVersion)) {
-			
+
 			if (await modalYesNo('Cancel', 'Ok', 'Update available', `New Quantum Manager version ${serverVersion} is available. Press OK for update. ` + serverMsg)) {
-				
+
 				let downloaded = false;
-				
+
 				modalManagerUpdateDownloadShow();
 				downloaded = (await downloadFile(fileUrl, filePath));
 				modalManagerUpdateDownloadHide();
-								
+
 				if (downloaded)
 				{
 					if (process.platform === 'linux') {
@@ -183,7 +181,7 @@ async function uiCheckSoftwareUpdates(localVersion) {
 					} else {
 						shell.openItem(filePath);
 					}
-					
+
 					await sleep(1000);
 					remote.getCurrentWindow().close();
 				} else {
@@ -208,7 +206,7 @@ async function uiCheckFirmwareUpdates(serial, localVersion) {
 			{
 				let serverMsg = JSON.parse(ret.data).msg_eng || '';
 				let serverVersion = JSON.parse(ret.data).FirmwareVersion || 0;
-				
+
 				if (serverVersion && serverVersion > localVersion) {
 					infoShow('Firmware update', 'New firmware version is available for your device. Please press "Check for updates" button to proceed update. ' + serverMsg, 'info', '10000');
 				}
@@ -223,7 +221,7 @@ async function uiCheckFirmwareUpdates(serial, localVersion) {
 
 //------------------------------------------------  USB events  ------------------------------------------------------------
 async function waitMode(mode, timeout) {
-	
+
 	while ((hidGetMode() !== mode) && (timeout > 0)) {
 	    await hidFindDevice();
 		await sleep(200);
@@ -234,7 +232,7 @@ async function waitMode(mode, timeout) {
 }
 
 async function waitDevice(serial, timeout) {
-	
+
 	while (!hidIsModeHID() && (timeout > 0)) {
 		await hidFindDevice(serial);
 	    await sleep(200);
@@ -246,24 +244,24 @@ async function waitDevice(serial, timeout) {
 
 async function waitEnterPin() {
 	if (hidIsModeHID() && !devStatus.PinOk) {
-		
+
 		uiShowSection('');
 		modalWaitPinShow();
-		
+
 		while (hidIsModeHID() && !devStatus.PinOk) {
 			await sleep(200);
 			await loadStatus();
 		}
-		
+
 		modalWaitPinHide();
 	}
-	
+
 	return (hidIsModeHID() && devStatus.PinOk)
 }
 
 async function waitActivation() {
 	if (hidIsModeHID() && !devStatus.Activated) {
-		
+
 		uiShowSection('');
 		modalWaitActivationShow(devStatus.Serial);
 
@@ -279,22 +277,22 @@ async function waitActivation() {
 }
 
 async function onDisconnect() {
-	
+
 	await modalWaitDevShow();
 	while (hidGetMode() === USB_DEV_MODE_DISCONNECTED) await sleep(10);
 	await modalWaitDevHide();
 }
 
 async function onConnect() {
-	
+
 	switch (hidGetMode()) {
-		
+
 		case USB_DEV_MODE_KBD:
 			modalKbdShow();
 			while (hidGetMode() === USB_DEV_MODE_KBD) await sleep(10);
 			modalKbdHide();
 		    break;
-				
+
 		case USB_DEV_MODE_U2F:
 			modalU2fShow();
 			while (hidGetMode() === USB_DEV_MODE_U2F) await sleep(10);
@@ -303,29 +301,29 @@ async function onConnect() {
 
 		case USB_DEV_MODE_HID:
 		case USB_DEV_MODE_BOOT:
-		
+
 			if (await hidInitChannel(1000)) {
-				
+
 				await loadStatus();
-				
+
 				switch (devStatus.Mode) {
 					case 'pc':
 
 						await hidSetTime(1000);
 						await waitActivation();
-					
+
 						if (await waitEnterPin()) {
 							uiCheckFirmwareUpdates(devStatus.Serial, devStatus.FirmwareVersion);
 
 							await loadPasswords();
 							await loadWallets();
 							await loadSettings();
-							
+
 							uiShowSection('last');
 							if (devStatus.Empty) infoShow('Status', 'User memory is empty. Please add new user to continue.', 'info', '10000');
 						}
 						break;
-					
+
 					case 'boot':
 						uiShowSection('');
 						await firmwareUpdate();
@@ -342,37 +340,37 @@ async function onConnect() {
 
 //------------------------------------------------  Firmware update  -------------------------------------------------------
 async function firmwareUpdateSetBootMode(serial, stat, timeout) {
-	
+
 	switch (stat.Mode)
 	{
 		case 'pc':
 			await hidSetBootMode(timeout);
 			await sleep(500);
-		
+
 			if (await waitDevice(serial, 5000)) {
 				await sleep(500);
 				return await hidInitChannel(timeout);
 			}
 		break
-		
+
 		case 'boot':
 			return true;
 	}
-	
+
 	return false;
 }
 
 async function firmwareUpdateProcess(firmware, serial) {
-	
+
 	hidEnableHandlers(false);
 	modalFwUpdateStartBtnEnable(false);
 	modalFwUpdateCancelBtnEnable(false);
 	modalFwUpdateText('Entering boot mode...');
-	
+
 	const bootMode = await firmwareUpdateSetBootMode(serial, devStatus, 5000);
-	
+
 	if (bootMode) {
-		
+
 		let addr = 0;
 		let ret = true;
 		let size = firmware.byteLength;
@@ -380,7 +378,7 @@ async function firmwareUpdateProcess(firmware, serial) {
 
 		modalFwUpdateText('Updating...');
 		while (size && ret && hidIsModeHID()) {
-			
+
 			let s = Math.min(size, 512);
 			let buff = new Uint8Array(firmware, addr, s);
 			let data = arrayToHexString(buff);
@@ -389,7 +387,7 @@ async function firmwareUpdateProcess(firmware, serial) {
 			if (ret) {
 				addr += s;
 				size -= s;
-				
+
 				modalFwUpdateProgress((addr / total) * 100);
 				await sleep(1);
 			}
@@ -407,7 +405,7 @@ async function firmwareUpdateProcess(firmware, serial) {
 		} else {
 			modalFwUpdateText('Firmware updated error.<br>Please try again.');
 		}
-		
+
 	} else {
 		modalFwUpdateText('Error!!! Can\'t set boot mode.');
 	}
@@ -421,14 +419,14 @@ async function firmwareUpdateProcess(firmware, serial) {
 
 async function firmwareUpdate() {
 	if (!hidIsBusy()) {
-		
+
 		const serial = hidGetSerial();
 		await modalFwUpdateShow(devStatus.FirmwareVersion);
 		const firmwareData = await firmwareGetUpdateFile(serial, 10000);
-		
+
 		if (firmwareData && (firmwareData.byteLength > 1024)) {
 			let serverVersion = (await firmwareGetUpdateVersion(serial, 5000)).FirmwareVersion;
-				
+
 			if (serverVersion > devStatus.FirmwareVersion) {
 				modalFwUpdateStartBtnSetHandler(firmwareUpdateProcess, firmwareData, serial);
 				modalFwUpdateText('Press Start to begin update process', serverVersion, devStatus.FirmwareVersion);
@@ -440,7 +438,7 @@ async function firmwareUpdate() {
 
 		await modalFwUpdateWait();
 		await hidFindDevice();
-		
+
 		if (hidIsConnected()) {
 			onConnect();
 		} else {
@@ -459,32 +457,32 @@ let minimizeToTray = false;
 
 async function settingsManagerReadLocalStore() {
 	let store = new electronStore();
-	
+
 	minimizeToTray = (store.get('MinimizeToTray') === 'true');
 	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
 }
 
 async function settingsManagerReadLocalSettings() {
-	
+
 	let autoLauncher = new autoLaunch({name: 'QuantumManager'});
-	
+
 	autoLauncher.isEnabled().then((isEnabled) => {
 		$('#settings_auto_start').prop('checked', isEnabled);
 	}).catch((err) => {
 		$('#settings_auto_start').prop('checked', false);
 	});
-	
+
 	settingsManagerReadLocalStore();
 	$('#settings_to_tray').prop('checked', minimizeToTray);
 }
 
 async function settingsManagerChangeAutoStart() {
-	
+
 	let autoLauncher = new autoLaunch({
 		name: 'QuantumManager',
 		isHidden: true
 	});
-	
+
 	if ($('#settings_auto_start').prop('checked')) {
 		autoLauncher.enable();
 	} else {
@@ -494,7 +492,7 @@ async function settingsManagerChangeAutoStart() {
 
 async function settingsManagerChangeToTray() {
 	let store = new electronStore();
-	
+
 	if ($('#settings_to_tray').prop('checked')) {
 		minimizeToTray = true;
 		store.set('MinimizeToTray', 'true');
@@ -502,7 +500,7 @@ async function settingsManagerChangeToTray() {
 		minimizeToTray = false;
 		store.set('MinimizeToTray', 'false');
 	}
-	
+
 	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
 }
 //------------------------------------------------  Quantum Manager Settings  ----------------------------------------------
@@ -512,7 +510,7 @@ async function settingsManagerChangeToTray() {
 
 //------------------------------------------------  Quantum Manager Main  --------------------------------------------------
 document.addEventListener('keydown', function (e) {
-	
+
 	if ((e.which === 123) || (e.which === 117)) {  							
 		remote.getCurrentWindow().toggleDevTools();
 	} else if (e.which === 116) {
@@ -522,9 +520,9 @@ document.addEventListener('keydown', function (e) {
 
 
 $(document).ready(async () => {
-	
+
 	settingsManagerReadLocalStore();
-	
+
 	$('max-btn').on('click', () => {
 		if (!remote.getCurrentWindow().isMaximized()){
 			remote.getCurrentWindow().maximize();
@@ -540,34 +538,34 @@ $(document).ready(async () => {
 			remote.getCurrentWindow().minimize();
 		}
 	});
-	
+
 	$('#close-btn').on('click', () => {
 		remote.getCurrentWindow().close();
 	}); 
-	
+
     ipcRenderer.on('focus-element', () => {
 		$('#app_header_toolbar')
 			.removeClass('toolbar_unfocused')
 			.addClass('toolbar_focused');
     });
-	
+
 	ipcRenderer.on('blur-element', () => {
 		$('#app_header_toolbar')
 			.removeClass('toolbar_focused')
 			.addClass('toolbar_unfocused');
     });
-	
+
 	ipcRenderer.on('pc-resume', () => {
 		onConnect();
     });
-	
+
 	uiCheckSoftwareUpdates(remote.app.getVersion());
 	$('#about_version').text(remote.app.getVersion());	
-	
-	
+
+
 	hidInit(onConnect, onDisconnect);
 	await hidFindDevice();
-	
+
 	if (hidIsConnected()) {
 		onConnect();
 	} else {

@@ -8,7 +8,7 @@ function settingsSelect() {
 
 async function loadSettings() {
 	let ret = await hidGetSettings(1000);
-	
+
 	if (ret.Command === 'GetSettings') {
 		$('#settings_lang').val(ret.Lang);
 		$('#settings_def_mode').val(ret.DefaultMode);
@@ -23,9 +23,9 @@ async function loadSettings() {
 
 async function settingsGet() {
 	if (!hidIsBusy()) {
-		
+
 		let ret = await loadSettings();
-		
+
 		if (ret.Error) {
 			infoShow('Error', ret.Error, 'error', 5000);
 		} else {
@@ -36,7 +36,7 @@ async function settingsGet() {
 								
 async function settingsSet() {
 	if (!hidIsBusy()) {
-		
+
 		let Settings = {
 			Lang: $('#settings_lang').val(),
 			DefaultMode: $('#settings_def_mode').val(),
@@ -45,7 +45,7 @@ async function settingsSet() {
 			ScreenSaver: $('#settings_screensaver').val(),
 			PrintDelay: $('#settings_print_delay').val()
 		};
-		
+
 		infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
 		let ret = await hidSetSettings(Settings, 40000);
 		infoHide();
@@ -60,7 +60,7 @@ async function settingsSet() {
 
 async function settingsClearMem() {
 	if (!hidIsBusy()) {
-		
+
 		infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
 		let ret = await hidClearMemory(60000);
 		infoHide();
@@ -69,12 +69,12 @@ async function settingsClearMem() {
 			infoShow('Error', ret.Error, 'error', 5000);
 		} else {
 			infoShow('Success', 'Memory clear', 'success', 2000);
-						
+
 			await loadStatus();
 			await loadPasswords();
 			await loadWallets();
 			await loadSettings();
-			
+
 			generalUpdateInfo();
 		}
 	}
@@ -82,37 +82,37 @@ async function settingsClearMem() {
 
 async function settingsBackup() {
 	if (!hidIsBusy()) {
-		
+
 		infoShow('Attention', 'Enter crypt key on device', 'info', 5000);
 		let ret = await hidBackupKey(60000);
-		
+
 		if (ret.Command === 'BackupKey') {
-			
+
 			let addr = 0;
 			let size = ret.Size;
 			let total = ret.Size;
 			let buff = new Uint8Array(size);
-											
+
 			ret = true;
 			await modalBackupRestoreShow('Backup user data');
-			
+
 			while (ret && !ret.Error && size) {
 				let s = Math.min(size, 512);
 
 				ret = await hidBackupReadBlock(addr, s, 3000);
 				if (ret && ret.Command === 'BackupBlockRead') {
-					
+
 					let block = hexStringToArray(ret.Data);
-														
+
 					buff.set(block, addr);
 					addr += s;
 					size -= s;
-					
+
 					modalBackupRestoreProgress((addr / total) * 100);
 					await sleep(1);
 				}
 			}
-											
+
 			if (!ret.Error) {
 				let fileName = dialog.showSaveDialog({defaultPath: 'userdata.dat'});
 
@@ -122,14 +122,14 @@ async function settingsBackup() {
 					ret = false;
 				}
 			}
-			
+
 			modalBackupRestoreHide();
 		}
-		
+
 		if (ret.Error) {
 			infoShow('Error', ret.Error, 'error', 5000);
 		}
-		
+
 		if (ret.Command === 'BackupBlockRead') {
 			infoShow('Attention', 'User data backup OK', 'info', 2000);
 		}
@@ -138,7 +138,7 @@ async function settingsBackup() {
 
 async function settingsRestore() {
 	if (!hidIsBusy()) {
-		
+
 		let ret = false;
 		let fileName = dialog.showOpenDialog({defaultPath: 'userdata.dat'});
 
@@ -152,7 +152,7 @@ async function settingsRestore() {
 				ret = await hidBackupKey(60000);
 
 				if (ret.Command === 'BackupKey') {
-					
+
 					let addr = 0;
 					let total = size;
 
@@ -160,16 +160,16 @@ async function settingsRestore() {
 					await modalBackupRestoreShow('Restore user data');
 
 					while (ret && !ret.Error && size) {
-						
+
 						let s = Math.min(size, 512);
 						let block = buff.slice(addr, addr + 512);
 
 						ret = await hidBackupWriteBlock(addr, s, arrayToHexString(block), 3000)
 						if (ret && ret.Command === 'BackupBlockWrite') {
-							
+
 							addr += s;
 							size -= s;
-							
+
 							modalBackupRestoreProgress((addr / total) * 100);
 							await sleep(1);
 						}
@@ -180,7 +180,7 @@ async function settingsRestore() {
 
 			}
 		}
-		
+
 		if (ret.Error) {
 			infoShow('Error', ret.Error, 'error', 5000);
 		}
