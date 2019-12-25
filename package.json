@@ -64,7 +64,6 @@
   "coinselect": "^3.1.11",
   "decimal.js": "^10.2.0",
   "electron-store": "^4.0.0",
-  "ethereumjs-common": "^1.4.0",
   "ethereumjs-tx": "^2.1.1",
   "ethereumjs-util": "^6.2.0",
   "jquery": "^3.4.1",
@@ -72,11 +71,8 @@
   "photonkit": "^0.1.2",
   "popper.js": "^1.16.0",
   "qr-image": "^3.2.0",
-  "request": "^2.88.0",
   "ripple-lib": "^1.4.2",
   "toastr": "^2.1.4",
-  "usb-detection": "^4.5.0",
-  "web3": "^1.2.4",
-  "ws": "^6.2.1"
+  "usb-detection": "^4.5.0"
  }
 }
