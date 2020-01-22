@@ -4,7 +4,7 @@
  "author": "SecurityArts",
  "description": "SecurityArts Quantum Manager",
  "main": "main.js",
- "version": "1.0.4",
+ "version": "1.0.5",
  "license": "MIT",
  "scripts": {
   "start": "electron .",
@@ -52,27 +52,29 @@
   }
  },
  "devDependencies": {
-  "electron": "^4.2.12",
+  "electron": "^7.1.9",
   "electron-builder": "^21.2.0"
  },
  "dependencies": {
   "auto-launch": "^5.0.5",
   "bitcoinjs-lib": "^4.0.5",
-  "bitcore-lib-cash": "^8.13.0",
-  "bootstrap": "^4.3.1",
+  "bitcore-lib-cash": "^8.14.4",
+  "bootstrap": "^4.4.1",
   "bootstrap-material-design": "^4.1.2",
   "coinselect": "^3.1.11",
   "decimal.js": "^10.2.0",
-  "electron-store": "^4.0.0",
-  "ethereumjs-tx": "^2.1.1",
+  "electron-store": "^5.1.0",
+  "eosjs": "^20.0.3",
+  "ethereumjs-tx": "^2.1.2",
   "ethereumjs-util": "^6.2.0",
   "jquery": "^3.4.1",
-  "node-hid": "^0.7.9",
+  "node-hid": "^1.1.0",
   "photonkit": "^0.1.2",
   "popper.js": "^1.16.0",
   "qr-image": "^3.2.0",
-  "ripple-lib": "^1.4.2",
+  "request": "^2.88.0",
+  "ripple-lib": "^1.6.2",
   "toastr": "^2.1.4",
-  "usb-detection": "^4.5.0"
+  "usb-detection": "^4.7.0"
  }
 }

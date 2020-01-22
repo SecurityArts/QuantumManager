@@ -54,12 +54,13 @@ process.argv.forEach((val, index, array) => {
 
 function createWindow () {
 	win = new BrowserWindow({
-			width: 1050,
-			height: 700,
-			minWidth: 1050,
-			minHeight: 700,
+			width: 1150,
+			height: 750,
+			minWidth: 1150,
+			minHeight: 750,
 			frame: false,
 			show: false, 
+			webPreferences: {nodeIntegration: true},
 			icon: __dirname + '/app/icons/512x512.png'});
 
 	win.loadFile('./app/index.html');
@@ -67,18 +68,18 @@ function createWindow () {
 	win.on('closed', () => {
 		win = null;
 	});
-	
+
 	win.once('ready-to-show', () => {
 		if (!minimized) {
 			win.show();
 		}
 	});
-	
+
 	win.on('hide', () => {
 		if (tray) {
 			tray.setContextMenu(contextMenuOpen);
 		}
-		
+
 		if (minimizeToTray && (process.platform === 'darwin')) {
 			app.dock.hide();
 		}
@@ -88,12 +89,11 @@ function createWindow () {
 		if (tray) {
 			tray.setContextMenu(contextMenuHide);
 		}
-		
+
 		if (minimizeToTray && (process.platform === 'darwin')) {
 			app.dock.show();
 		}
 	});
-
 }
 
 
@@ -117,15 +117,14 @@ app.on('ready', () => {
 	createWindow();	
 	tray.setToolTip('Quantum Manager');
 	tray.setContextMenu(contextMenuOpen);
-	
+
 	electron.powerMonitor.on('suspend', () => {
 		win.webContents.send('pc-suspend');
 	});
-	
+
 	electron.powerMonitor.on('resume', () => {
 		win.webContents.send('pc-resume');
 	});
-
 });
 
 app.on('window-all-closed', () => {
@@ -144,7 +143,7 @@ ipc.on('settings', (event, args) => {
 		case 'MinimizeToTray=true':
 			minimizeToTray = true;
 			break;
-			
+
 		case 'MinimizeToTray=false':
 			minimizeToTray = false;
 			break;

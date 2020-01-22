@@ -17,6 +17,13 @@ async function loadWallets() {
 	if (walletsList) {
 		for (let i = 0; i < walletsList.Wallets.length; i++) {
 			$('#listWallets').append(`<li><a href="#" onclick="walletSelect(${i + 1})">${walletsList.Wallets[i].Name}</a></li>`);
+
+			if (walletsList.Wallets[i].Type === 'EOS') {
+				let accountName = storageGetWalletParameter(walletsList.Wallets[i].Name, 'account');
+
+				walletsList.Wallets[i].PubKey = walletsList.Wallets[i].Addr;
+				walletsList.Wallets[i].Addr = (accountName ? accountName : '');
+			}
 		}
 
 		if (walletsList.Wallets.length < walletsList.Max) {
@@ -25,6 +32,9 @@ async function loadWallets() {
 	}
 }
 
+
+
+//-------------------------------------  Bitcoin BTC  ---------------------------------------------------------------------
 async function walletSendBTC(wallet) {
 
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
@@ -131,7 +141,11 @@ async function walletSendBTC(wallet) {
 
 	modalTransactionHide();
 }
+//-------------------------------------  Bitcoin BTC  ---------------------------------------------------------------------
 
+
+
+//-------------------------------------  Bitcoin Cash BCH  ----------------------------------------------------------------
 async function walletSendBCH(wallet) {
 
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
@@ -242,7 +256,11 @@ async function walletSendBCH(wallet) {
 
 	modalTransactionHide();
 }
+//-------------------------------------  Bitcoin Cash BCH  ----------------------------------------------------------------
 
+
+
+//-------------------------------------  Ripple XRP  ----------------------------------------------------------------------
 async function walletSendXRP(wallet) {
 
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
@@ -255,8 +273,7 @@ async function walletSendXRP(wallet) {
 	let balance = bigNumMult(walletBalance, fractions);
 	let sendTotal = bigNumAdd(sendAmount, sendFee);
 
-	if (!rippleIsAddressValid(sendAddr, wallet.Options.Testnet))
-	{
+	if (!rippleIsAddressValid(sendAddr, wallet.Options.Testnet)) {
 		infoShow('Error', 'Invalid send address', 'error', 5000);
 		return;
 	}
@@ -319,8 +336,222 @@ async function walletSendXRP(wallet) {
 
 	modalTransactionHide();
 }
+//-------------------------------------  Ripple XRP  ----------------------------------------------------------------------
 
 
+
+//-------------------------------------  EOS EOS  -------------------------------------------------------------------------
+async function walletSendEOS(wallet) {
+
+	let sendAddr = $('#wallet_send_addr').val().trim(); 
+	let sendAmountStr = $('#wallet_send_amount_btc').val().replace(',', '.').trim();
+	let fractions = walletGetEosCoinParameters(wallet.Type, wallet.Options.Testnet).fractions;
+
+	let sendAmount = bigNumMult(sendAmountStr, fractions);
+	let balance = bigNumMult(walletBalance, fractions);
+
+	if (!eosIsValidAccountName(sendAddr)) {
+		infoShow('Error', 'Invalid send address', 'error', 5000);
+		return;
+	}
+
+	if (sendAmount == 0) {
+		infoShow('Error', 'Invalid send amount', 'error', 5000);
+		return;
+	}
+
+	if (balance.lessThan(sendAmount)) {
+		infoShow('Error', 'Wallet balance is to low', 'error', 5000);
+		return;
+	}
+
+	balance = bigNumSub(balance, sendAmount);
+	await modalTransactionShow(wallet.Addr, sendAddr, sendAmountStr, '0', bigNumToStr(bigNumDiv(balance, fractions), 8), ' EOS', 'Getting wallet data, please wait');
+	let tx = await eosGenerateTxTransfer(wallet.Addr, sendAddr, +sendAmount, wallet.Options.Testnet, 30, 5000);
+
+	if (!tx) {
+		modalTransactionHide();
+		infoShow('Error', 'Can\'t get wallet data', 'error', 5000);
+		return;
+	}
+
+	modalTransactionSetStatus('Please press random buttons on device', '', false, false);
+	await randomInit();
+	modalTransactionSetStatus('Press OK button on device to confirm operation', '', false, false);
+
+	let ret = await hidSignTransaction(wallet.Index, tx.tx, 'SECP256K1', 1, 1, 0, 70000);
+	if (ret.Error) {
+		modalTransactionHide();
+		infoShow('Error', ret.Error, 'error', 5000);
+		return;
+	}
+
+	tx = eosFormatTransaction(tx.packed_trx, ret.Signature);
+	modalTransactionSetStatus('Transaction signed. Press Broadcast to send to blockchain', tx, true, true);
+
+	if (await modalTransactionWaitConfirm()) {
+		ret = await eosPushTx(tx, wallet.Options.Testnet, 10000);
+
+		if (ret === true) {
+			infoShow('Success', 'Transaction broadcasted OK', 'success', 5000);
+		} else {
+			infoShow('Error', ret, 'error', 5000);
+		}
+	}
+
+	modalTransactionHide();
+}
+
+
+async function walletEosPushAction(tx) {
+
+	await randomInit();
+	infoShow('Attention', 'Press OK button on device to confirm operation', 'info', 5000);
+	let ret = await hidSignTransaction(walletsCurrent.Index, tx.tx, 'SECP256K1', 1, 1, 0, 70000);
+
+	if (ret.Error) {
+		infoShow('Error', ret.Error, 'error', 5000);
+		return;
+	}
+
+	tx = eosFormatTransaction(tx.packed_trx, ret.Signature);
+	ret = await eosPushTx(tx, walletsCurrent.Options.Testnet, 10000);
+
+	if (ret === true) {
+		infoShow('Success', 'Transaction broadcasted OK', 'success', 5000);
+	} else {
+		infoShow('Error', ret, 'error', 5000);
+	}
+}
+
+async function walletEosStake(isStake) {
+
+	let ret = await modalEosStake(walletsCurrent.Addr, isStake);
+
+	if (!ret) {
+		return;
+	}
+
+	if (!eosIsValidAccountName(ret.receiver)) {
+		if (isStake) {
+			infoShow('Error', 'Invalid receiver address', 'error', 5000);
+		} else {
+			infoShow('Error', 'Invalid holder address', 'error', 5000);
+		}
+		return;
+	}
+
+	let tx = await eosGenerateTxStakeUnstage(isStake, walletsCurrent.Addr, ret.receiver, +ret.amountCPU, +ret.amountNET, ret.transfer, walletsCurrent.Options.Testnet, 30, 5000);
+	await walletEosPushAction(tx);
+}
+
+
+async function walletEosBuyRam() {
+
+	let ret = await modalEosBuyRam(walletsCurrent.Addr);
+
+	if (!ret) {
+		return;
+	}
+
+	if (!eosIsValidAccountName(ret.receiver)) {
+		infoShow('Error', 'Invalid receiver address', 'error', 5000);
+		return;
+	}
+
+	let tx = await eosGenerateTxBuyRam((ret.type === 'EOS'), walletsCurrent.Addr, ret.receiver, +ret.amount, walletsCurrent.Options.Testnet, 30, 5000);
+	await walletEosPushAction(tx);
+}
+
+async function walletEosSellRam() {
+
+	let ret = await modalEnterNumber("EOS sell RAM", 'Enter RAM amount to sell in Bytes');
+
+	if (!ret) {
+		return;
+	}
+
+	let tx = await eosGenerateTxSellRam(walletsCurrent.Addr, walletsCurrent.Addr, +ret.Value, walletsCurrent.Options.Testnet, 30, 5000);
+	await walletEosPushAction(tx);
+}
+
+async function walletEosCreateAcount() {
+	let ret = await modalEosNewAccount();
+
+	if (!ret) {
+		return;
+	}
+
+	if (!eosIsValidAccountName(ret.accountName)) {
+		infoShow('Error', 'Invalid new account name', 'error', 5000);
+		return;
+	}
+
+	if (!eosIsValidPubKey(ret.ownerKey)) {
+		infoShow('Error', 'Invalid account owner public key', 'error', 5000);
+		return;
+	}
+
+	if (!eosIsValidPubKey(ret.activeKey)) {
+		infoShow('Error', 'Invalid account active public key', 'error', 5000);
+		return;
+	}
+
+	let tx = await eosGenerateTxNewAccount(walletsCurrent.Addr, ret.accountName, ret.ownerKey, ret.activeKey, ret.amountRAM, +ret.amountCPU, +ret.amountNET, walletsCurrent.Options.Testnet, 30, 5000);
+	await walletEosPushAction(tx);
+}
+
+async function walletEosFindAccount() {
+	if (!walletsCurrent.Options.Testnet) {
+		openExternalUrl('https://bloks.io/key/' + walletsCurrent.PubKey);
+	} else {
+		openExternalUrl('https://jungle.bloks.io/key/' + walletsCurrent.PubKey);
+	}
+}
+
+async function walletEosEnterAccount() {
+
+	let index = walletsCurrent.Index - 1;
+	let name = await modalEnterString('EOS account name', 13, 'Enter account name');
+
+	if (!name) {
+		return;
+	}
+		
+	if (!eosIsValidAccountName(name.Value)) {
+		infoShow('Error', 'Invalid account name', 'error', 5000);
+		return;
+	}
+	
+	storageSetWalletParameter(walletsCurrent.Name, 'account', name.Value);
+	walletsList.Wallets[index].Addr = name.Value
+	walletSelect(walletsCurrent.Index);
+}
+
+async function walletEosCreateAccount() {
+	if (!walletsCurrent.Options.Testnet) {
+
+		if (await modalYesNo('Cancel', 'OK', 'EOS Create account',
+							 'The way EOS works is that new accounts can only be created by someone with an existing account. ' + 
+							 'You\'ll be redirected to an external service where you will:<br><br>' + 
+							 '1. Select and enter new account name.<br>' + 
+							 '2. Input public keys (public key already copied to clipboard).<br>' + 
+							 '3. Make a payment to purchases EOS resources.<br><br>' +
+							 'Press OK to continue.')) {
+
+			walletCopyPubKey();
+			openExternalUrl('https://eos-account-creator.com');
+		}
+	} else {
+		walletCopyPubKey();
+		openExternalUrl('https://monitor.jungletestnet.io/#account');
+	}
+}
+//-------------------------------------  EOS EOS  -------------------------------------------------------------------------
+
+
+
+//-------------------------------------  Ethereum ETH  --------------------------------------------------------------------
 async function walletSendETH(wallet) {
 
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
@@ -416,8 +647,11 @@ async function walletSendETH(wallet) {
 
 	modalTransactionHide();
 }
+//-------------------------------------  Ethereum ETH  --------------------------------------------------------------------
 
 
+
+//-------------------------------------  Wallet  All  ---------------------------------------------------------------------
 async function walletSend() {
 	if (!hidIsBusy()) {
 
@@ -435,6 +669,10 @@ async function walletSend() {
 				await walletSendBCH(walletsCurrent);
 				break
 
+			case 'EOS':
+				await walletSendEOS(walletsCurrent);
+				break;
+
 			default:
 				await walletSendBTC(walletsCurrent);
 				break;
@@ -442,15 +680,100 @@ async function walletSend() {
 	}
 }
 
+function walletShowCoinSpecificBalance(balance, coin) {
+
+	switch (coin) {
+		case 'EOS':
+			$('#wallet_eos_cpu_staked_self').text('0');
+			$('#wallet_eos_net_staked_self').text('0');
+			if (balance.hasOwnProperty('self_delegated_bandwidth') && balance.self_delegated_bandwidth) {
+				if (balance.self_delegated_bandwidth.hasOwnProperty('cpu_weight')) {
+					$('#wallet_eos_cpu_staked_self').text(balance.self_delegated_bandwidth.cpu_weight);
+				}
+				if (balance.self_delegated_bandwidth.hasOwnProperty('net_weight')) {
+					$('#wallet_eos_net_staked_self').text(balance.self_delegated_bandwidth.net_weight);
+				}
+			}
+
+			$('#wallet_eos_cpu_staked_total').text('0');
+			$('#wallet_eos_net_staked_total').text('0');
+			if (balance.hasOwnProperty('total_resources') && balance.total_resources) {
+				if (balance.total_resources.hasOwnProperty('cpu_weight')) {
+					$('#wallet_eos_cpu_staked_total').text(balance.total_resources.cpu_weight);
+				}
+				if (balance.total_resources.hasOwnProperty('net_weight')) {
+					$('#wallet_eos_net_staked_total').text(balance.total_resources.net_weight);
+				}
+			}
+
+			$('#wallet_eos_cpu_used').text('0');
+			$('#wallet_eos_cpu_used_p').text('');
+			$('#wallet_eos_progress_cpu').css('width', '0%').attr('aria-valuenow', '0');
+			if (balance.hasOwnProperty('cpu_limit')) {
+				let p = (balance.cpu_limit.used / balance.cpu_limit.max) * 100;
+
+				$('#wallet_eos_cpu_used_p').text(p.toFixed(0) + '%');
+				$('#wallet_eos_cpu_used').text(balance.cpu_limit.used + ' / ' + balance.cpu_limit.max + ' ms');
+				$('#wallet_eos_progress_cpu').css('width', p.toFixed(0) + '%').attr('aria-valuenow', p.toFixed(0));
+			}
+
+			$('#wallet_eos_net_used').text('0');
+			$('#wallet_eos_net_used_p').text('');
+			$('#wallet_eos_progress_net').css('width', '0%').attr('aria-valuenow', '0');
+			if (balance.hasOwnProperty('net_limit')) {
+				let p = (balance.net_limit.used / balance.net_limit.max) * 100;
+
+				$('#wallet_eos_net_used_p').text(p.toFixed(0) + '%');
+				$('#wallet_eos_net_used').text(balance.net_limit.used + ' / ' + balance.net_limit.max + ' Bytes');
+				$('#wallet_eos_progress_net').css('width', p.toFixed(0) + '%').attr('aria-valuenow', p.toFixed(0));
+			}
+
+			$('#wallet_eos_ram_used').text('0');
+			$('#wallet_eos_ram_used_p').text('');
+			$('#wallet_eos_progress_ram').css('width', '0%').attr('aria-valuenow', '0');
+			if (balance.hasOwnProperty('ram_quota') && balance.hasOwnProperty('ram_usage')) {
+				let p = (balance.ram_usage / balance.ram_quota) * 100;
+
+				$('#wallet_eos_ram_used_p').text(p.toFixed(0) + '%');
+				$('#wallet_eos_ram_used').text(balance.ram_usage + ' / ' + balance.ram_quota + ' Bytes');
+				$('#wallet_eos_progress_ram').css('width', p.toFixed(0) + '%').attr('aria-valuenow', p.toFixed(0));
+			}
+
+			$('#wallet_eos_cpu_refunding').text('0');
+			if (balance.hasOwnProperty('refund_request') && balance.refund_request && balance.refund_request.hasOwnProperty('cpu_amount')) {
+				$('#wallet_eos_cpu_refunding').text(balance.refund_request.cpu_amount);
+			}
+
+			$('#wallet_eos_net_refunding').text('0');
+			if (balance.hasOwnProperty('refund_request') && balance.refund_request && balance.refund_request.hasOwnProperty('net_amount')) {
+				$('#wallet_eos_net_refunding').text(balance.refund_request.net_amount);
+			}
+		break;
+	}
+}
+
+function walletParseBalance(balance, coin, addr, testnet, divider) {
+
+	if (typeof(balance) === 'object') {
+
+		if (balance.hasOwnProperty('balance')) {
+			walletBalance = bigNumDiv(balance.balance, divider);
+		}
+		walletShowCoinSpecificBalance(balance, coin);
+	} else {
+		walletBalance = bigNumDiv(balance, divider);
+		walletShowCoinSpecificBalance(false, coin);
+	}
+
+	$('#wallet_balance').text(bigNumToStr(walletBalance, 18) + ' ' + coin);
+}
 
 
 async function walletGetBalance(coin, addr, testnet, divider) {
-
 	walletBalance = 0;
 
 	$.get(coinApiAddrBalance, {coin: coin, addr: addr, testnet: testnet, confirmations: 1, rnd: rnd()}).then((ret) => {
-		walletBalance = bigNumDiv(ret, divider);
-		$('#wallet_balance').text(bigNumToStr(walletBalance, 18) + ' ' + coin);
+		walletParseBalance(ret, coin, addr, testnet, divider);
 	}).catch(() => null);
 }
 
@@ -508,7 +831,7 @@ async function walletGetExchangeRate(coin) {
 	}).catch(() => null);
 }
 
-function walletSelect(index) {
+async function walletSelect(index) {
 	if (index && walletsList && (walletsList.Wallets.length >= index)) {
 
 		let params;
@@ -517,9 +840,14 @@ function walletSelect(index) {
 		walletsCurrent = walletsList.Wallets[index - 1];
 		$('#wallet_name').text(walletsCurrent.Name);
 		$('#wallet_addr').text(walletsCurrent.Addr);
+
 		$('#wallet_balance').text('...');
 		$('#wallet_send_addr').val('');
-		$('#wallet_gas_limit_div').hide();
+
+		$('#wallet_alert').hide();
+		$('#wallet_eos_specific').hide();
+		$('#wallet_eth_specific').hide();
+		$('#wallet_send_fee').prop("disabled", (walletsCurrent.Type === 'EOS'));
 
 		switch (walletsCurrent.Type) {
 			case 'XRP':
@@ -528,10 +856,25 @@ function walletSelect(index) {
 				break;
 
 			case 'ETH':
-				feeFractions = walletGetEthGasPriceFractions();
 				params = walletGetEthCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
+				feeFractions = walletGetEthGasPriceFractions();
+
 				$('#wallet_gas_limit').val(params.gasLimit);
-				$('#wallet_gas_limit_div').show();
+				$('#wallet_eth_specific').show();
+				break;
+
+			case 'EOS':
+				params = walletGetEosCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
+				feeFractions = params.fractions;
+
+				if (!walletsCurrent.Addr) {
+					$('#wallet_alert').show();
+				} else {
+					$('#wallet_eos_specific').show();
+				}
+
+				$('#wallet_key_pub').text(walletsCurrent.PubKey);
+				$('#wallet_eos_pubkey').text(walletsCurrent.PubKey);
 				break;
 
 			default:
@@ -556,6 +899,7 @@ function walletSelect(index) {
 
 		$('#section_wallet_key').hide();	
 		uiShowSection('wallets');
+		
 	} else {
 		generalSelect();
 	}
@@ -594,7 +938,7 @@ async function walletAdd() {
 				await loadStatus();
 				await loadWallets();
 				generalUpdateInfo();
-				walletSelect(walletsList.Wallets.length);
+				await walletSelect(walletsList.Wallets.length);
 
 				if (await modalYesNo('Cancel', 'Yes', 'Attention!!!', 'New wallet added. Please press "Yes" to make device backup copy.')) {
 					await settingsBackup();
@@ -622,6 +966,7 @@ async function walletDelete() {
 
 			infoShow('Success', 'Wallet deleted', 'success', 2000);
 
+			storageClear(walletsCurrent.Name);
 			await loadStatus();
 			await loadWallets();
 			generalUpdateInfo();
@@ -651,49 +996,48 @@ async function walletShowData() {
 			return;
 		}
 
-		$('#wallet_key_hex').show();
-		$('#wallet_key_hex_name').show();
-
-		$('#wallet_key_wif').show();
-		$('#wallet_key_wif_name').show();
-
-		$('#wallet_key_seed').show();
-		$('#wallet_key_seed_name').show();
+		$('#wallet_key_pub_name').hide();
+		$('#wallet_key_hex_name').hide();
+		$('#wallet_key_wif_name').hide();
+		$('#wallet_key_seed_name').hide();
+		$('#wallet_key_secret_name').hide();
 
 		if (wallet.Command === 'GetWalletData') {
 
-			switch (walletsCurrent.Type) {
-				case 'XRP':
-					$('#wallet_key_wif').text(wallet.Secret);
-					$('#wallet_key_wif_name').text('SECRET: ');
-
-					if (!wallet.Seed) $('#wallet_key_seed_name').hide();
-					if (!wallet.Secret) $('#wallet_key_wif_name').hide();
-					break;
-
-				case 'ETH':
-					$('#wallet_key_wif').hide();
-					$('#wallet_key_wif_name').hide();
-					
-					$('#wallet_key_seed').hide();
-					$('#wallet_key_seed_name').hide();
-					break;
-
-				default:
-					$('#wallet_key_wif').text(wallet.WIF);
-					$('#wallet_key_wif_name').text('WIF: ');
-					break;
+			if (wallet.hasOwnProperty('WIF') && wallet.WIF && wallet.Type !== 'ETH') {
+				$('#wallet_key_wif').text(wallet.WIF);
+				$('#wallet_key_wif_name').show();
 			}
 
-			$('#wallet_key_hex').text(wallet.Key);
-			$('#wallet_key_seed').text(wallet.Seed);
+			if (wallet.hasOwnProperty('Key') && wallet.Key) {
+				$('#wallet_key_hex').text(wallet.Key);
+				$('#wallet_key_hex_name').show();
+			}
+
+			if (wallet.hasOwnProperty('Seed') && wallet.Seed) {
+				$('#wallet_key_seed').text(wallet.Seed);
+				$('#wallet_key_seed_name').show();
+			}
+
+			if (wallet.hasOwnProperty('Secret') && wallet.Secret) {
+				$('#wallet_key_secret').text(wallet.Secret);
+				$('#wallet_key_secret_name').show();
+			}
+
+			if (wallet.Type === 'EOS') {
+				$('#wallet_key_pub').text(wallet.Addr);
+				$('#wallet_key_pub_name').show();
+			}
 
 			$('#section_wallet_key').show();
 		}
 	}
 }
+//-------------------------------------  Wallet  All  ---------------------------------------------------------------------
 
 
+
+//-------------------------------------  Wallet  Utills  ------------------------------------------------------------------
 function walletBlockExplorer() {
 	let params;
 
@@ -706,6 +1050,10 @@ function walletBlockExplorer() {
 			params = walletGetEthCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
 			break;
 
+		case 'EOS':
+			params = walletGetEosCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
+			break;
+
 		default:
 			params = walletGetBtcCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
 			break;
@@ -716,6 +1064,11 @@ function walletBlockExplorer() {
 
 function walletCopyWif() {
 	clipboard.writeText($('#wallet_key_wif').text());
+	infoShow('', 'Key copied to clipboard', 'success', 5000);
+}
+
+function walletCopySecret() {
+	clipboard.writeText($('#wallet_key_secret').text());
 	infoShow('', 'Key copied to clipboard', 'success', 5000);
 }
 
@@ -732,6 +1085,11 @@ function walletCopySeed() {
 function walletCopyAddr() {
 	clipboard.writeText(walletsCurrent.Addr);
 	infoShow('', 'Wallet address copied to clipboard', 'success', 5000);
+}
+
+function walletCopyPubKey() {
+	clipboard.writeText($('#wallet_key_pub').text());
+	infoShow('', 'Wallet public key copied to clipboard', 'success', 5000);
 }
 
 function walletCopyBalance() {
@@ -756,3 +1114,4 @@ function walletShowQR(addr) {
 	$('#wallet_qr').attr('d', q.path);
 	$('#wallet_viewbox').attr('viewBox', '0 0 ' + ++q.size + ' ' + q.size);
 }
+//-------------------------------------  Wallet  Utills  ------------------------------------------------------------------

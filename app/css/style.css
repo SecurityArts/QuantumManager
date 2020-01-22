@@ -45,8 +45,13 @@ div#section_wait {
 	}
 }
 /* ----  loading animation  ---- */
-
-
+.rescan-button {
+	width: 100%;
+	height: 620px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
 
 #max-btn .image, #min-btn .image, #close-btn .image{
 	height:16px;
@@ -55,7 +60,7 @@ div#section_wait {
 	background-size: 100% 100%;
 }
 
-#modal_add_pass label, #modal_add_wallet label, #modal_add_user label {
+#modal_add_pass label, #modal_add_wallet label, #modal_add_user label, #modal_eos_buy_ram label, #modal_eos_stake label, #modal_eos_new_acc label {
 	margin-bottom: -5px;
 }
 

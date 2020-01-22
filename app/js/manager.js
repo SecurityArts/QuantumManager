@@ -10,7 +10,6 @@ const {dialog} = require('electron').remote;
 const {clipboard} = require('electron');
 const {ipcRenderer} = require('electron');
 const autoLaunch = require('auto-launch');
-const electronStore = require('electron-store');
 
 
 //------------------------------------------------  Popover  ---------------------------------------------------------------
@@ -78,6 +77,7 @@ function uiShowSection(section = '') {
 	}
 
 	$('#section_wait').hide();
+	$('#section_rescan').hide();
 	$('#section_market').hide();
 	$('#section_general').hide();
 	$('#section_wallets').hide();
@@ -86,6 +86,7 @@ function uiShowSection(section = '') {
 
 	switch (section) {
 		case 'wait': $('#section_wait').show(); break;
+		case 'rescan': $('#section_rescan').show(); break;
 		case 'market': $('#section_market').show(); break;
 		case 'wallets': $('#section_wallets').show(); break;
 		case 'settings': $('#section_settings').show(); break;
@@ -197,7 +198,6 @@ async function uiCheckSoftwareUpdates(localVersion) {
 
 
 
-
 //------------------------------------------------  Firmware update status  ------------------------------------------------
 async function uiCheckFirmwareUpdates(serial, localVersion) {
 	$.get('https://wallet.security-arts.com/firmware.php', {version: true, serial: serial, rnd: rnd()}).then((ret) => {
@@ -272,7 +272,7 @@ async function waitActivation() {
 
 		modalWaitActivationHide();
 	}
-	
+
 	return (hidIsModeHID() && devStatus.Activated);
 }
 
@@ -333,6 +333,22 @@ async function onConnect() {
 			break;
 	}
 }
+
+async function onConnectErr() {
+	uiShowSection('rescan');
+}
+
+async function generalRescan() {
+
+	uiShowSection('wait');
+	await hidFindDevice();
+
+	if (hidIsConnected()) {
+		onConnect();
+	} else {
+		onDisconnect();
+	}
+}
 //------------------------------------------------  USB events  ------------------------------------------------------------
 
 
@@ -345,10 +361,10 @@ async function firmwareUpdateSetBootMode(serial, stat, timeout) {
 	{
 		case 'pc':
 			await hidSetBootMode(timeout);
-			await sleep(500);
+			await sleep(2000);
 
 			if (await waitDevice(serial, 5000)) {
-				await sleep(500);
+				await sleep(1000);
 				return await hidInitChannel(timeout);
 			}
 		break
@@ -454,11 +470,8 @@ async function firmwareUpdate() {
 //------------------------------------------------  Quantum Manager Settings  ----------------------------------------------
 let minimizeToTray = false;
 
-
 async function settingsManagerReadLocalStore() {
-	let store = new electronStore();
-
-	minimizeToTray = (store.get('MinimizeToTray') === 'true');
+	minimizeToTray = (storageGet('MinimizeToTray') == true);
 	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
 }
 
@@ -491,16 +504,8 @@ async function settingsManagerChangeAutoStart() {
 }
 
 async function settingsManagerChangeToTray() {
-	let store = new electronStore();
-
-	if ($('#settings_to_tray').prop('checked')) {
-		minimizeToTray = true;
-		store.set('MinimizeToTray', 'true');
-	} else {
-		minimizeToTray = false;
-		store.set('MinimizeToTray', 'false');
-	}
-
+	minimizeToTray = ($('#settings_to_tray').prop('checked'));
+	storageSet('MinimizeToTray', minimizeToTray);
 	ipc.send('settings', 'MinimizeToTray=' + minimizeToTray);
 }
 //------------------------------------------------  Quantum Manager Settings  ----------------------------------------------
@@ -563,7 +568,7 @@ $(document).ready(async () => {
 	$('#about_version').text(remote.app.getVersion());	
 
 
-	hidInit(onConnect, onDisconnect);
+	hidInit(onConnect, onDisconnect, onConnectErr);
 	await hidFindDevice();
 
 	if (hidIsConnected()) {

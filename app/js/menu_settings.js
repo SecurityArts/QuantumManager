@@ -33,7 +33,7 @@ async function settingsGet() {
 		}
 	}
 }
-								
+
 async function settingsSet() {
 	if (!hidIsBusy()) {
 
@@ -114,10 +114,10 @@ async function settingsBackup() {
 			}
 
 			if (!ret.Error) {
-				let fileName = dialog.showSaveDialog({defaultPath: 'userdata.dat'});
+				let fileName = await dialog.showSaveDialog({defaultPath: 'userdata.dat'});
 
 				if (fileName) {
-					fs.writeFileSync(fileName, buff);
+					fs.writeFileSync(fileName.filePath, buff);
 				} else {
 					ret = false;
 				}
@@ -140,10 +140,10 @@ async function settingsRestore() {
 	if (!hidIsBusy()) {
 
 		let ret = false;
-		let fileName = dialog.showOpenDialog({defaultPath: 'userdata.dat'});
+		let fileName = await dialog.showOpenDialog({defaultPath: 'userdata.dat'});
 
 		if (fileName) {
-			let buff = fs.readFileSync(fileName[0]);
+			let buff = fs.readFileSync(fileName.filePaths[0]);
 
 			if (buff && buff.length) {
 				let size = buff.length;

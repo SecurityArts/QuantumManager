@@ -8,7 +8,6 @@
 		<link rel="stylesheet" href="../node_modules/photonkit/dist/css/photon.css">
 		<link rel="stylesheet" href="../node_modules/toastr/build/toastr.css">
 		<link rel="stylesheet" href="css/style.css">
-				
 		<script rel="stylesheet" href="../node_modules/photonkit/dist/template-app/js/menu.js"></script>
 	</head>
 	
@@ -46,7 +45,7 @@
 							</li>
 							
 							<li class="nav-group-item">
-								<a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#listPasswords" data-parent="#listPasswords" style="height: 40px">
+								<a class="nav-link nav-link-collapse collapsed password-toggle" data-toggle="collapse" href="#listPasswords" data-parent="#listPasswords" style="height: 40px">
 									<div class="row">
 										<div class="col-sm-1 nav-image">
 											<img src="img/icon-passwords.svg" width="22">
@@ -61,7 +60,7 @@
 							</li>
 							
 							<li class="nav-group-item">
-								<a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#listWallets" data-parent="#listWallets" style="height: 40px">
+								<a class="nav-link nav-link-collapse collapsed wallet-toggle" data-toggle="collapse" href="#listWallets" data-parent="#listWallets" style="height: 40px">
 									<div class="row">
 										<div class="col-sm-1 nav-image">
 											<img src="img/icon-wallets.svg" width="22">
@@ -114,12 +113,19 @@
 											<div style="min-height: 500px;">
 
 												<div class="card-body">
+												
 													<div id="section_wait" class="">
 														<div class="lds-ring">
 															<div></div>
 															<div></div>
 															<div></div>
 															<div></div>
+														</div>
+													</div>
+													
+													<div id="section_rescan" class="hide">
+														<div class="rescan-button">
+															<button type="button" onclick="generalRescan()" class="btn btn-light">Rescan USB devices</button>
 														</div>
 													</div>
 													
@@ -155,36 +161,35 @@
 													</div>
 
 													<div id="section_wallets" class="hide">
-														<form>
-															<div class="form-group row">
-																<div class="col-sm-10">
-																	<div class="form-group row">
 
-																		<div class="col-sm-1"><span class="panel-text">Name</span></div>
-																		<div class="col-sm-11"></span><span id="wallet_name" class="panel-value"></span></div>
+														<div class="form-group row">
+															<div class="col-sm-10">
+																<div class="form-group row">
+
+																	<div class="col-sm-1"><span class="panel-text">Name</span></div>
+																	<div class="col-sm-11"></span><span id="wallet_name" class="panel-value"></span></div>
 																			
-																		<div class="col-sm-1"><span class="panel-text">Type</span></div>
-																		<div class="col-sm-11"><span id="wallet_type" class="panel-value"></span></div>
+																	<div class="col-sm-1"><span class="panel-text">Type</span></div>
+																	<div class="col-sm-11"><span id="wallet_type" class="panel-value"></span></div>
 
-																		<div class="col-sm-1"><span class="panel-text">Balance</span></div>
-																		<div class="col-sm-11"><span id="wallet_balance" class="panel-value" onclick="walletCopyBalance()"></span></div>
-
-																		<div class="col-sm-1"><span class="panel-text">Addr</span></div>
-																		<div class="col-sm-11"><span id="wallet_addr" class="panel-value" onclick="walletCopyAddr()"></span></div>
-																	</div>
-																</div>
-
-																<div class="col-sm-1">
-																	<img id="wallet_img" src="img/none.png" style="float: right;" width="64">
-																</div>
-																
-																<div class="col-sm-1">
-																	<svg width="64px" height="64px" id="wallet_viewbox" viewbox="0 0 32 32" style="float: right;">
-																		<path id="wallet_qr" d=""/>
-																	</svg>
+																	<div class="col-sm-1"><span class="panel-text">Balance</span></div>
+																	<div class="col-sm-11"><span id="wallet_balance" class="panel-value" onclick="walletCopyBalance()"></span></div>
+																		
+																	<div class="col-sm-1"><span class="panel-text" id="wallet_addr_name">Addr</span></div>
+																	<div class="col-sm-11"><span id="wallet_addr" class="panel-value" onclick="walletCopyAddr()"></span></div>
 																</div>
 															</div>
-														</form>
+															
+															<div class="col-sm-1">
+																<img id="wallet_img" src="img/none.png" style="float: right;" width="64">
+															</div>
+																
+															<div class="col-sm-1">
+																<svg width="64px" height="64px" id="wallet_viewbox" viewbox="0 0 32 32" style="float: right;">
+																	<path id="wallet_qr" d=""/>
+																</svg>
+															</div>
+														</div>
 
 														<div class="form-group row">
 															<div class="col-sm-1">
@@ -233,7 +238,7 @@
 																</div>
 															</div>
 															
-															<div class="col-sm-5" id="wallet_gas_limit_div" class="hide">
+															<div class="col-sm-5" id="wallet_eth_specific" class="hide">
 																<div class="input-group input-group-sm mb-3">
 																	<input id="wallet_gas_limit" type="text" class="form-control form-control-sm" placeholder="Enter Gas Limit" aria-label="Enter Gas Limit">
 																	<div class="input-group-append">
@@ -244,14 +249,15 @@
 														</div>
 
 														<div id="section_wallet_key" class="hide" style="padding: 0px;">
-															<span class="panel-text" id="wallet_key_wif_name">WIF: </span><span id="wallet_key_wif" class="panel-value" onclick="walletCopyWif()"></span>
-															<span class="panel-text" id="wallet_key_hex_name"><br>HEX: </span><span id="wallet_key_hex" class="panel-value" onclick="walletCopyHex()"></span>
-															<span class="panel-text" id="wallet_key_seed_name"><br>SEED: </span><span id="wallet_key_seed" class="panel-value" onclick="walletCopySeed()"></span>
-															<br><br>
+															<div id="wallet_key_pub_name"><span class="panel-text">PubKey: </span>		<span id="wallet_key_pub" class="panel-value" onclick="walletCopyPubKey()"></span></div>
+															<div id="wallet_key_wif_name"><span class="panel-text">WIF: </span>			<span id="wallet_key_wif" class="panel-value" onclick="walletCopyWif()"></span></div>
+															<div id="wallet_key_secret_name"><span class="panel-text">SECRET: </span>	<span id="wallet_key_secret" class="panel-value" onclick="walletCopySecret()"></span></div>
+															<div id="wallet_key_hex_name"><span class="panel-text">HEX: </span>			<span id="wallet_key_hex" class="panel-value" onclick="walletCopyHex()"></span></div>
+															<div id="wallet_key_seed_name"><span class="panel-text">SEED: </span>		<span id="wallet_key_seed" class="panel-value" onclick="walletCopySeed()"></span></div>
+															<br>
 														</div>
 
 														<div class="form-group row">
-															
 															<div class="col-sm-3">
 																<button type="button" onclick="walletSend()"     		id="wallet_send_btn"  class="btn btn-info">Send</button>
 																<button type="button" onclick="walletBlockExplorer()"	id="wallet_send_btn"  class="btn btn-info">Block Explorer</button>
@@ -262,6 +268,124 @@
 																<button type="button" onclick="walletShowData()" id="wallet_show_btn" class="btn btn-danger">Show wallet key</button>
 															</div>
 														</div>
+														
+														<div id="wallet_alert" style="padding-top:5px">
+															<hr>
+															<div class="form-group row" style="padding-top:10px">
+																<div class="col-sm-12">
+																	<div class="alert alert-success" role="alert">
+																		<h4 class="alert-heading" style="padding-bottom:5px">EOS account name required</h4>
+																		<p>
+																			No associated account name found in local storage for public key:
+																			<b><span id="wallet_eos_pubkey" onclick="walletCopyPubKey()"></span></b>
+																			<br>
+																			You can create new account using external service, or try to search for existing name online
+																			(using public key) and enter it manually.
+																		</p>
+																		<hr>
+																		<p class="mb-0">
+																			<button type="button" onclick="walletEosCreateAccount()" class="btn btn-info btn-sm">Create account</button>
+																			<button type="button" onclick="walletEosFindAccount()" class="btn btn-info btn-sm">Find account</button>
+																			<button type="button" onclick="walletEosEnterAccount()" class="btn btn-info btn-sm">Enter manually</button>
+																		</p>
+																	</div>
+																</div>
+															</div>
+														</div>
+														
+														<div id="wallet_eos_specific" style="padding-top:5px">
+
+															<hr>
+															<div class="form-group row" style="padding-top:5px">
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">CPU Total Staked </span>
+																	<span id="wallet_eos_cpu_staked_total" class="panel-value"></span>
+																</div>
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">CPU Self Staked </span>
+																	<span id="wallet_eos_cpu_staked_self" class="panel-value"></span>
+																</div>
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">CPU Refunding </span>
+																	<span id="wallet_eos_cpu_refunding" class="panel-value"></span>
+																</div>
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">NET Total Staked </span>
+																	<span id="wallet_eos_net_staked_total" class="panel-value"></span>
+																</div>
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">NET Self Staked </span>
+																	<span id="wallet_eos_net_staked_self" class="panel-value"></span>
+																</div>
+
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">NET Refunding </span>
+																	<span id="wallet_eos_net_refunding" class="panel-value"></span>
+																</div>
+															</div>
+																
+															<div class="form-group row" style="padding-top:5px">
+															
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">CPU Used </span>
+																	<span id="wallet_eos_cpu_used" class="panel-value"></span>
+																</div>
+																<div class="col-sm-6">
+																	<div class="progress">
+																		<div id="wallet_eos_progress_cpu" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0">
+																			<span id="wallet_eos_cpu_used_p"></span>
+																		</div>
+																	</div>
+																</div>
+																<div class="col-sm-2"></div>
+
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">NET Used </span>
+																	<span id="wallet_eos_net_used" class="panel-value"></span>
+																</div>
+																<div class="col-sm-6">
+																	<div class="progress">
+																		<div id="wallet_eos_progress_net" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0">
+																			<span id="wallet_eos_net_used_p"></span>
+																		</div>
+																	</div>
+																</div>
+																<div class="col-sm-2"></div>
+																
+																<div class="col-sm-4" style="padding-right:0px">
+																	<span class="panel-text">RAM Used </span>
+																	<span id="wallet_eos_ram_used" class="panel-value"></span>
+																</div>
+																<div class="col-sm-6">
+																	<div class="progress">
+																		<div id="wallet_eos_progress_ram" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0">
+																			<span id="wallet_eos_ram_used_p"></span>
+																		</div>
+																	</div>
+																</div>
+																<div class="col-sm-2"></div>
+																
+															</div>
+																
+															<div class="form-group row" style="padding-top:10px">
+																<div class="col-sm-4">
+																	<button type="button" onclick="walletEosStake(true)" 	class="btn btn-info">Stake</button>
+																	<button type="button" onclick="walletEosStake(false)"	class="btn btn-info">Unstake</button>
+																</div>
+																
+																<div class="col-sm-8">
+																	<button type="button" onclick="walletEosBuyRam()"		class="btn btn-info">Buy RAM</button>
+																	<button type="button" onclick="walletEosSellRam()"		class="btn btn-info">Sell RAM</button>
+																	<button type="button" onclick="walletEosCreateAcount()"	class="btn btn-info">Create acount</button>
+																</div>
+															</div>
+														</div>
+														
 													</div>
 
 													<div id="section_passwords" class="hide">
@@ -519,12 +643,14 @@
 							<div class="form-group">
 								<label for="modal_wallet_type">Wallet type</label>
 								<select class="form-control form-control-sm" id="modal_wallet_type">
+									<option>NONE</option>
 									<option>Bitcoin - (BTC)</option>
 									<option>Ethereum - (ETH)</option>
 									<option>Litecoin - (LTC)</option>
 									<option>Bitcoin Cash - (BCH)</option>
 									<option>Ripple - (XRP)</option>
 									<option>Dash - (DASH)</option>
+									<option>EOS - (EOS)</option>
 									<option>Dogecoin - (DOGE)</option>
 									<option>Stakenet - (XSN)</option>
 								</select>
@@ -564,6 +690,149 @@
 				</div>
 			</div>
 			<!-- Add wallet modal -->
+			
+			
+			<!-- EOS buy RAM modal -->
+			<div class="modal fade" id="modal_eos_buy_ram" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_eos_buy_ram_title">EOS buy RAM</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body">
+						
+							<div class="form-group">
+								<label for="modal_eos_buy_ram_receiver">RAM Receiver</label>
+								<input type="text" id="modal_eos_buy_ram_receiver" class="form-control form-control-sm" placeholder="Enter account name" required="required" maxlength="15">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_buy_ram_amount" id="modal_eos_buy_ram_amount_type">RAM amount to buy in EOS</label>
+								<input type="text" id="modal_eos_buy_ram_amount" class="form-control form-control-sm" placeholder="Enter amount to buy" required="required" maxlength="300">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_buy_ram_type">Buy in EOS or Bytes</label>
+								<select class="form-control form-control-sm" id="modal_eos_buy_ram_type">
+									<option>EOS</option>
+									<option>Bytes</option>
+								</select>
+							</div>
+							
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_eos_buy_ram_ok" class="btn btn-info">Ok</button>
+							<button type="button" id="modal_eos_buy_ram_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- EOS buy RAM modal -->
+			
+			
+			<!-- EOS stake -->
+			<div class="modal fade" id="modal_eos_stake" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_eos_stake_title">EOS Stake</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body">
+						
+							<div class="form-group">
+								<label for="modal_eos_stake_receiver" id="modal_eos_stake_receiver_text">Stake receiver</label>
+								<input type="text" id="modal_eos_stake_receiver" class="form-control form-control-sm" placeholder="Enter account name" required="required" maxlength="15">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_stake_cpu_amount" id="modal_eos_stake_cpu_amount_text">CPU stake amount</label>
+								<input type="text" id="modal_eos_stake_cpu_amount" class="form-control form-control-sm" placeholder="Enter EOS amount to stake" required="required" maxlength="300">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_stake_net_amount" id="modal_eos_stake_net_amount_text">NET stake amount</label>
+								<input type="text" id="modal_eos_stake_net_amount" class="form-control form-control-sm" placeholder="Enter EOS amount to stake" required="required" maxlength="300">
+							</div>
+							
+							<div class="form-check form-check-inline" id="modal_eos_stake_transfer_section">
+								<input class="form-check-input" type="checkbox" id="modal_eos_stake_transfer">
+								<label class="form-check-label" for="modal_eos_stake_transfer"> Transfer</label>
+							</div>
+							
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_eos_stake_ok" class="btn btn-info">Ok</button>
+							<button type="button" id="modal_eos_stake_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- EOS stake -->
+			
+			
+			<!-- EOS new account -->
+			<div class="modal fade" id="modal_eos_new_acc" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_eos_new_acc_title">EOS Create account</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						
+						<div class="modal-body">
+						
+							<div class="form-group">
+								<label for="modal_eos_new_acc_name">New account name</label>
+								<input type="text" id="modal_eos_new_acc_name" class="form-control form-control-sm" placeholder="Enter new account name" required="required" maxlength="15">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_new_acc_owner_key">Account owner public key</label>
+								<input type="text" id="modal_eos_new_acc_owner_key" class="form-control form-control-sm" placeholder="Enter new account owner public key" required="required" maxlength="100">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_new_acc_active_key">Account active public key</label>
+								<input type="text" id="modal_eos_new_acc_active_key" class="form-control form-control-sm" placeholder="Enter new account active public key" required="required" maxlength="100">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_new_acc_net_amount">CPU stake amount (EOS)</label>
+								<input type="text" id="modal_eos_new_acc_cpu_amount" class="form-control form-control-sm" placeholder="Enter CPU stake amount for new account" required="required" maxlength="20">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_new_acc_net_amount">NET stake amount (EOS)</label>
+								<input type="text" id="modal_eos_new_acc_net_amount" class="form-control form-control-sm" placeholder="Enter NET stake amount for new account" required="required" maxlength="20">
+							</div>
+							
+							<div class="form-group">
+								<label for="modal_eos_new_acc_ram_amount">RAM amount (Bytes)</label>
+								<input type="text" id="modal_eos_new_acc_ram_amount" class="form-control form-control-sm" placeholder="Enter RAM amount for new account" required="required" maxlength="10">
+							</div>
+							
+						</div>
+						
+						<div class="modal-footer">
+							<button type="button" id="modal_eos_new_acc_ok" class="btn btn-info">Ok</button>
+							<button type="button" id="modal_eos_new_acc_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- EOS new account -->
 			
 			
 			<!-- Modal transaction -->
@@ -612,15 +881,13 @@
 								</div>
 								
 								<div class="col-sm-10">
-									<a data-toggle="collapse" id="modal_tarnsaction_collapse_btn" href="#modal_transaction_collapse" aria-expanded="false" aria-controls="modal_transaction_btc_collapse">
-										
-									</a>
+									<a data-toggle="collapse" id="modal_tarnsaction_collapse_btn" href="#modal_transaction_collapse" aria-expanded="false" aria-controls="modal_transaction_btc_collapse"></a>
 								</div>
 							</div>
 							
 							<div class="collapse" id="modal_transaction_collapse">
 								<div class="card card-body">
-									<span class="selactable" id="modal_tarnsaction_transaction"></span>
+									<span class="selactable" id="modal_tarnsaction_transaction" style="height:200px; overflow:scroll"></span>
 								</div>
 								<button id="modal_tarnsaction_copy_tx" type="button btn-sm" class="btn btn-info" style="margin-top:10px">Copy to clipboard</button>
 							</div>
@@ -899,12 +1166,12 @@
 			<!-- Modal add 2FA -->
 			
 			
-			<!-- Enter number modal -->
-			<div class="modal fade" id="modal_enter_number" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+			<!-- Enter value modal -->
+			<div class="modal fade" id="modal_enter_value" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
 				<div class="modal-dialog modal-dialog-centered" role="document">
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4 class="modal-title" id="modal_enter_number_title">Enter number</h4>
+							<h4 class="modal-title" id="modal_enter_value_title">Enter number</h4>
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 								<span class="icon icon-cancel-squared"></span>
 							</button>
@@ -912,18 +1179,18 @@
 						
 						<div class="modal-body" id="modal_add_user_text">
 							<div class="form-group">
-								<input type="text" id="modal_enter_number_value" class="form-control form-control-sm" placeholder="Enter number" required="required" maxlength="17">
+								<input type="text" id="modal_enter_value_value" class="form-control form-control-sm" placeholder="Enter value" required="required" maxlength="17">
 							</div>
 						</div>
 						
 						<div class="modal-footer">
-							<button type="button" id="modal_enter_number_ok" class="btn btn-info">Ok</button>
-							<button type="button" id="modal_enter_number_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+							<button type="button" id="modal_enter_value_ok" class="btn btn-info">Ok</button>
+							<button type="button" id="modal_enter_value_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</div>
 			</div>
-			<!-- Enter number modal -->
+			<!-- Enter value modal -->
 			
 			
 			<!-- Modal backup -->
@@ -1133,30 +1400,39 @@
 			</div>
 			<!-- Modal about -->
 
-
 			<footer class="toolbar toolbar-footer draggable">
 			</footer>
 		</div>
 
-
-		<script>
-			$ = window.$ = window.jQuery = require('jquery');
+		<script type="text/javascript">
+			window.$ = window.jQuery = require('jquery');
 			window.Popper = require('popper.js');
 			require('bootstrap-material-design');
+			require('bootstrap');
 			toastr = require('toastr');
-		</script>
-		<script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
-		<script src="js/bitcoin-networks.js"></script>
+			$(".password-toggle").click(function() {
+				$( "#listPasswords" ).toggle("linear");
+			});
+			
+			$(".wallet-toggle").click(function() {
+				$( "#listWallets" ).toggle("linear");
+			});
+		</script>
+		
+		<script src="js/eos.js"></script>
+		<script src="js/eos-abi.js"></script>
 		<script src="js/modals.js"></script>
 		<script src="js/usbhid.js"></script>
 		<script src="js/manager.js"></script>
 		<script src="js/bitcoin.js"></script>
 		<script src="js/ripple.js"></script>
 		<script src="js/ethereum.js"></script>
+		<script src="js/bitcoin-networks.js"></script>
 
 		<script src="js/utills.js"></script>
 		<script src="js/bignum.js"></script>
+		<script src="js/storage.js"></script>
 		<script src="js/updates.js"></script>
 
 		<script src="js/menu_general.js"></script>

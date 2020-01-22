@@ -40,6 +40,7 @@ let deviceMode = USB_DEV_MODE_DISCONNECTED;
 let handlersFncEnabled = false;
 let handlersFncOnConnectFnc = false;
 let handlersFncOnDisconnectFnc = false;
+let handlersFncOnConnectErrFnc = false;
 
 
 let commandChannelId = 0;
@@ -118,73 +119,110 @@ function hidEnableHandlers(enable = true) {
 	handlersFncEnabled = enable;
 }
 
-function hidSetHandlers(onConnectHandler = false, onDisconnectHandler = false) {
+function hidSetHandlers(onConnectHandler = false, onDisconnectHandler = false, onConnectErrHandler = false) {
 	handlersFncOnConnectFnc = onConnectHandler;
 	handlersFncOnDisconnectFnc = onDisconnectHandler;
+	handlersFncOnConnectErrFnc = onConnectErrHandler;
 }
 
-async function hidFindDevice(serial = 0) {
+async function hidTryToConnect(usbDescriptor, tries, delay) {
+	let handler = false;
 
-	deviceMode = USB_DEV_MODE_DISCONNECTED;
+	for (let i = 0; i < tries; i++) {
+		await sleep(delay);
+		try {
+			handler = await new HID.HID(usbDescriptor.vendorId, usbDescriptor.productId);
+			return handler;
+		} catch (err) {}
+	}
+
+	return handler;
+}
+
+async function hidFindDevice(usbSerial = 0, usbDescriptor = false, connectTries = 2, connectDelay = 100) {
+
+	let tryToConnect = false;
 
 	if (deviceHandler) {
 		try {
 			deviceHandler.close();
-		} catch (err) {
-			return USB_DEV_MODE_DISCONNECTED;
-		}
+		} catch (err) {}
 	}
 
-	await sleep(100);
-	deviceHandler = HID.devices().find((d) => {
+	deviceMode = USB_DEV_MODE_DISCONNECTED;
 
-		if ((d.vendorId === USB_VID) && (serial === d.serialNumber || serial === 0))
-		{
-			deviceSerial = d.serialNumber;
-			switch (d.productId) {
-				case USB_PID_HID:
-					deviceMode = USB_DEV_MODE_HID;
-					return true;
+	if (usbDescriptor) {
+		deviceSerial = usbDescriptor.serialNumber;
+		switch (usbDescriptor.productId) {
 
-				case USB_PID_BOOT:
-					deviceMode = USB_DEV_MODE_BOOT;
-					return true;
+			case USB_PID_KBD:
+				deviceMode = USB_DEV_MODE_KBD;
+				break;
 
-				case USB_PID_KBD:
-					deviceMode = USB_DEV_MODE_KBD;
-					return false;
+			case USB_PID_U2F:
+				deviceMode = USB_DEV_MODE_U2F;
+				break;
 
-				case USB_PID_U2F:
-					deviceMode = USB_DEV_MODE_U2F;
-					return false;
-			}
+			case USB_PID_HID:
+				tryToConnect = true;
+				deviceMode = USB_DEV_MODE_HID;
+				break;
+
+			case USB_PID_BOOT:
+				tryToConnect = true;
+				deviceMode = USB_DEV_MODE_BOOT;
+				break;
 		}
-	});
 
-	if (deviceHandler) {
-		try {
-			await sleep(100);
-			deviceHandler = new HID.HID(deviceHandler.path);
-			if (!deviceHandler) {
-				deviceMode = USB_DEV_MODE_DISCONNECTED;
+	} else {
+
+		await sleep(100);
+		HID.devices().find((d) => {
+			if ((d.vendorId === USB_VID) && (usbSerial === d.serialNumber || usbSerial === 0))
+			{
+				usbDescriptor = d;
+				deviceSerial = d.serialNumber;
+
+				switch (d.productId) {
+
+					case USB_PID_KBD:
+						deviceMode = USB_DEV_MODE_KBD;
+						return true;
+
+					case USB_PID_U2F:
+						deviceMode = USB_DEV_MODE_U2F;
+						return true;
+
+					case USB_PID_HID:
+						tryToConnect = true;
+						deviceMode = USB_DEV_MODE_HID;
+						return true;
+
+					case USB_PID_BOOT:
+						tryToConnect = true;
+						deviceMode = USB_DEV_MODE_BOOT;
+						return true;
+				}
 			}
+		});
+	}
 
-		} catch (err) {
-			deviceHandler = false;
+	if (tryToConnect && usbDescriptor) {
+		deviceHandler = await hidTryToConnect(usbDescriptor, connectTries, connectDelay);
+		if (!deviceHandler) {
 			deviceMode = USB_DEV_MODE_DISCONNECTED;
-			return deviceMode;
 		}
 	}
 
 	return deviceMode;
 }
 
-function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
+function hidInit(onConnectHandler = false, onDisconnectHandler = false, onConnectErrHandler = false) {
 
 	deviceSerial = 0;
 	deviceHandler = false;
-	deviceMode = USB_DEV_MODE_DISCONNECTED;
 	handlersFncEnabled = true;
+	deviceMode = USB_DEV_MODE_DISCONNECTED;
 
 	if (onConnectHandler) {
 	    handlersFncOnConnectFnc = onConnectHandler;
@@ -194,23 +232,31 @@ function hidInit(onConnectHandler = false, onDisconnectHandler = false) {
 	    handlersFncOnDisconnectFnc = onDisconnectHandler;
     }
 
-	detect.startMonitoring();	
-	detect.on('add:' + USB_VID, async (d) => {
+	if (onConnectErrHandler) {
+	    handlersFncOnConnectErrFnc = onConnectErrHandler;
+    }
+
+	detect.startMonitoring();
+	detect.on('add:' + USB_VID, async (usbDescriptor) => {
 		if (deviceMode === USB_DEV_MODE_DISCONNECTED) {
 
-			await hidFindDevice();
+			await hidFindDevice(0, usbDescriptor, 5, 100);
 			if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
 				if (handlersFncOnConnectFnc && handlersFncEnabled) {
 					await handlersFncOnConnectFnc();
+				}
+			} else {
+				if (handlersFncOnConnectErrFnc && handlersFncEnabled) {
+					await handlersFncOnConnectErrFnc();
 				}
 			}
 		}
 	});
 
-	detect.on('remove:' + USB_VID, async (d) => {
+	detect.on('remove:' + USB_VID, async (usbDescriptor) => {
 		if (deviceMode !== USB_DEV_MODE_DISCONNECTED) {
 
-			if (deviceSerial === d.serialNumber) {
+			if (deviceSerial === usbDescriptor.serialNumber) {
 				deviceSerial = 0;
 				deviceHandler = false;
 				deviceMode = USB_DEV_MODE_DISCONNECTED;
@@ -244,7 +290,6 @@ function hidReadPacket(timeout) {
 		});
 	});
 }
-
 
 function hidWritePacket(buff) {
 
@@ -304,7 +349,6 @@ function hidWrite(cid, type, data) {
 
 	return true;
 }
-
 
 async function hidRead(cid, type, timeout) {
 	let size = 0;
@@ -575,4 +619,3 @@ async function hidBootCheckFirmware(timeout = 1000) {
 	return await hidCommand(jsonToArray({Command: 'BootCheckFirmware', CmdId: rnd()}), timeout);
 }
 //-------------------------------------  Boot commands  -------------------------------------------------------------------
-

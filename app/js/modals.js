@@ -1,8 +1,9 @@
 'use strict';
 
+
 //-------------------------------------  Helper functions  ----------------------------------------------------------------
 function modalValidateName(name) {
-	if (name) {
+	if (name && (typeof name === 'string')) {
 		let regex = /^[a-zA-Z0-9\-\_\,\.\]\[\}\{\)\(\#\@ ]+$/g
 		return regex.test(name);
 	}
@@ -14,7 +15,7 @@ function modalValidateName(name) {
 
 
 //-------------------------------------  General modals  ------------------------------------------------------------------
-function modalYesNo(textCancel, textYes, textTitle, textBody) {
+function modalYesNo(textCancel, textYes, textTitle, textBody, retTrue = true, retFalse = false) {
 	return new Promise((resolve) => {
 
 		let ret = false;
@@ -33,18 +34,18 @@ function modalYesNo(textCancel, textYes, textTitle, textBody) {
 
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
-				ret = true;
+				ret = retTrue;
 				$('#modal_dialog_yes_no').modal('hide');
 			}
 		});
 
 		$('#modal_yes_no_ok').unbind('click').on('click', () => {
-			ret = true;
+			ret = retTrue;
 			$('#modal_dialog_yes_no').modal('hide');
 		});
 
 		$('#modal_yes_no_cancel').unbind('click').on('click', () => {
-			ret = false;
+			ret = retFalse;
 			$('#modal_dialog_yes_no').modal('hide');
 		});
 
@@ -60,42 +61,79 @@ function modalYesNo(textCancel, textYes, textTitle, textBody) {
 	});
 }
 
-function modalEnterNumber(titleText) {
+function modalEnterString(titleText, maxLen = 1000, placeHolder = 'Enter value') {
 	return new Promise((resolve) => {
 
 		let ret = false;
 
-		$('#modal_enter_number_ok').unbind('click').on('click', () => {
-			let val = parseInt($('#modal_enter_number_value').val());
+		$('#modal_enter_value_ok').unbind('click').on('click', () => {
+			ret = {Value: $('#modal_enter_value_value').val()};
+
+			$('#modal_enter_value').modal('hide');
+		});
+
+		$(document).unbind('keyup').keyup((e) => {
+			if (e.which === 13) {
+				$('#modal_enter_value_ok').click()
+			}
+		});
+
+		$('#modal_enter_value_cancel').unbind('click').on('click', () => {
+			$('#modal_enter_value').modal('hide');
+		});
+
+		$('#modal_enter_value').unbind('shown.bs.modal').on('shown.bs.modal', () => {
+			$('#modal_enter_value_value').focus();
+		});
+
+		$('#modal_enter_value').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
+			resolve(ret);
+		});
+
+		$('#modal_enter_value_value').val('');
+		$('#modal_enter_value_value').attr('placeholder', placeHolder);
+		$('#modal_enter_value_title').text(titleText);
+		$('#modal_enter_value').modal();
+	});
+}
+
+function modalEnterNumber(titleText, placeHolder = 'Enter value') {
+	return new Promise((resolve) => {
+
+		let ret = false;
+
+		$('#modal_enter_value_ok').unbind('click').on('click', () => {
+			let val = parseInt($('#modal_enter_value_value').val().replace(',', '.').trim());
 
 			if (!isNaN(val)) {
 				ret = {Value: val};
 			}
 
-			$('#modal_enter_number').modal('hide');
+			$('#modal_enter_value').modal('hide');
 		});
 
 		$(document).unbind('keyup').keyup((e) => {
 			if (e.which === 13) {
-				$('#modal_enter_number_ok').click()
+				$('#modal_enter_value_ok').click()
 			}
 		});
 
-		$('#modal_enter_number_cancel').unbind('click').on('click', () => {
-			$('#modal_enter_number').modal('hide');
+		$('#modal_enter_value_cancel').unbind('click').on('click', () => {
+			$('#modal_enter_value').modal('hide');
 		});
 
-		$('#modal_enter_number').unbind('shown.bs.modal').on('shown.bs.modal', () => {
-			$('#modal_enter_number_value').focus();
+		$('#modal_enter_value').unbind('shown.bs.modal').on('shown.bs.modal', () => {
+			$('#modal_enter_value_value').focus();
 		});
 
-		$('#modal_enter_number').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
+		$('#modal_enter_value').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
 			resolve(ret);
 		});
 
-		$('#modal_enter_number_value').val('');
-		$('#modal_enter_number_title').text(titleText);
-		$('#modal_enter_number').modal();
+		$('#modal_enter_value_value').val('');
+		$('#modal_enter_value_value').attr('placeholder', placeHolder);
+		$('#modal_enter_value_title').text(titleText);
+		$('#modal_enter_value').modal();
 	});
 }
 
@@ -170,6 +208,16 @@ function modalAddPasswordHandleEnter(str, addEnter) {
 	return str;
 }
 
+function modalValidatePassword(pass) {
+
+	if (pass && (typeof pass === 'string')) {
+		return (!/[^a-zA-Z0-9 ~!@#\$%\^&\*\(\)\[\]\{\}<>\-\|_=\+\?\,\.:\/\\'"]/.test(pass));
+	}
+
+	//Valid chars: 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ~!@#$%^&*()[]{}<>-_=+?,.:/\'"
+	return false;
+}
+
 function modalAddPassword() {
 	return new Promise((resolve) => {
 
@@ -183,24 +231,36 @@ function modalAddPassword() {
 		$('#modal_pass_data2').val('');
 		$('#modal_pass_login').val('');
 		$('#modal_pass_login2').val('');
-
 		$('#modal_pass_rnd_len').val('');
 		$('#modal_pass_card1_num').val('');
 		$('#modal_pass_card1_holder').val('');
 		$('#modal_pass_card1_date').val('');
 		$('#modal_pass_card1_cvv').val('');
-
 		$('#modal_pass_card2_num').val('');
 		$('#modal_pass_card2_date').val('');
 		$('#modal_pass_card2_cvv').val('');
+
+		$('#modal_pass_url').removeClass('input_error');
+		$('#modal_pass_name').removeClass('input_error');
+		$('#modal_pass_data').removeClass('input_error');
+		$('#modal_pass_login').removeClass('input_error');
+		$('#modal_pass_login2').removeClass('input_error');
+		$('#modal_pass_data1').removeClass('input_error');
+		$('#modal_pass_data2').removeClass('input_error');
+		$('#modal_pass_card1_num').removeClass('input_error');
+		$('#modal_pass_card1_holder').removeClass('input_error');
+		$('#modal_pass_card1_date').removeClass('input_error');
+		$('#modal_pass_card1_cvv').removeClass('input_error');
+		$('#modal_pass_card2_num').removeClass('input_error');
+		$('#modal_pass_card2_date').removeClass('input_error');
+		$('#modal_pass_card2_cvv').removeClass('input_error');
+		$('#modal_pass_rnd_len').removeClass('input_error');
 
 		$('#modal_pass_opt1').prop('checked', true);
 		$('#modal_pass_opt2').prop('checked', true);
 		$('#modal_pass_opt3').prop('checked', true);
 		$('#modal_pass_opt4').prop('checked', false);
 		$('#modal_pass_gen_enter').prop('checked', false);
-		$('#modal_pass_name').removeClass('input_error');
-
 
 		$('#modal_pass_name').unbind('change').on('change', () => {
 			if (!modalValidateName($('#modal_pass_name').val())) {
@@ -210,80 +270,133 @@ function modalAddPassword() {
 			}
 		});
 
+		$('#modal_pass_data').unbind('change').on('change', () => {
+			if (!modalValidatePassword($('#modal_pass_data').val())) {
+				$('#modal_pass_data').addClass('input_error');
+			} else {
+				$('#modal_pass_data').removeClass('input_error');
+			}
+		});
+
 		$('#modal_pass_login').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_login').val() + '\\t' + $('#modal_pass_data1').val();
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_login').val())) {
+				$('#modal_pass_login').addClass('input_error');
+			} else {
+				$('#modal_pass_login').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_login2').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_login2').val())) {
+				$('#modal_pass_login2').addClass('input_error');
+			} else {
+				$('#modal_pass_login2').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_data1').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_login').val() + '\\t' + $('#modal_pass_data1').val();
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_data1').val())) {
+				$('#modal_pass_data1').addClass('input_error');
+			} else {
+				$('#modal_pass_data1').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_data2').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_data2').val())) {
+				$('#modal_pass_data2').addClass('input_error');
+			} else {
+				$('#modal_pass_data2').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_url').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_url').val() + '\\f' + $('#modal_pass_login2').val() + '\\t' + $('#modal_pass_data2').val();
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_url').val())) {
+				$('#modal_pass_url').addClass('input_error');
+			} else {
+				$('#modal_pass_url').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_gen_enter').unbind('change').on('change', () => {
 			let userData = $('#modal_pass_data').val();
 			addEnter = $('#modal_pass_gen_enter').is(':checked');
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
 		});
 
 		//---------------  Credit card1  --------------------------
 		$('#modal_pass_card1_num').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card1_num').val())) {
+				$('#modal_pass_card1_num').addClass('input_error');
+			} else {
+				$('#modal_pass_card1_num').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_card1_holder').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card1_holder').val())) {
+				$('#modal_pass_card1_holder').addClass('input_error');
+			} else {
+				$('#modal_pass_card1_holder').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_card1_date').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card1_date').val())) {
+				$('#modal_pass_card1_date').addClass('input_error');
+			} else {
+				$('#modal_pass_card1_date').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_card1_cvv').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card1_num').val() + '\\t' + $('#modal_pass_card1_holder').val() + '\\t' +
 							 $('#modal_pass_card1_date').val() + '\\t' + $('#modal_pass_card1_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card1_cvv').val())) {
+				$('#modal_pass_card1_cvv').addClass('input_error');
+			} else {
+				$('#modal_pass_card1_cvv').removeClass('input_error');
+			}
 		});
 		//---------------  Credit card1  --------------------------
 
@@ -292,29 +405,44 @@ function modalAddPassword() {
 		$('#modal_pass_card2_num').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
 							 $('#modal_pass_card2_date').val() + '\\t' + $('#modal_pass_card2_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card2_num').val())) {
+				$('#modal_pass_card2_num').addClass('input_error');
+			} else {
+				$('#modal_pass_card2_num').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_card2_date').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
 							 $('#modal_pass_card2_date').val() + '\\t' + $('#modal_pass_card2_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card2_date').val())) {
+				$('#modal_pass_card2_date').addClass('input_error');
+			} else {
+				$('#modal_pass_card2_date').removeClass('input_error');
+			}
 		});
 
 		$('#modal_pass_card2_cvv').unbind('change').on('change', () => {
 			const userData = $('#modal_pass_card2_num').val() + '\\t' +
 							 $('#modal_pass_card2_date').val() + '\\t' + $('#modal_pass_card2_cvv').val();
+			const passData = modalAddPasswordHandleEnter(userData, addEnter);
 
-			const handler = modalAddPasswordHandleEnter(userData, addEnter);
-			$('#modal_pass_data').val(handler);
+			$('#modal_pass_data').val(passData);
+			if (!modalValidatePassword($('#modal_pass_card2_cvv').val())) {
+				$('#modal_pass_card2_cvv').addClass('input_error');
+			} else {
+				$('#modal_pass_card2_cvv').removeClass('input_error');
+			}
 		});
 		//---------------  Credit card2  --------------------------
 
-		
+
 
 		$('#modal_pass_type').unbind('change').on('change', () => {
 
@@ -385,46 +513,42 @@ function modalAddPassword() {
 			.unbind('click')
 			.on('click', () => {
 
-				if (modalValidateName($('#modal_pass_name').val())) {
-					ret = false;
+				let pass = $('#modal_pass_data').val();
+				let name = $('#modal_pass_name').val();
+				let len = $('#modal_pass_rnd_len').val();
 
-					if ($('#modal_pass_type').val() === 'Random password' && $('#modal_pass_rnd_len').val()) {
+				if (modalValidateName(name)) {
 
-						let options = 0;
+					if (($('#modal_pass_type').val() === 'Random password')) {
 
-						if ($('#modal_pass_opt1').is(':checked')) {
-							options |= (1 << 0);
+						if (!len || isNaN(len)) {
+							$('#modal_pass_rnd_len').addClass('input_error');
+						} else {
+							let options = 0;
+
+							if ($('#modal_pass_opt1').is(':checked')) options |= (1 << 0);
+							if ($('#modal_pass_opt2').is(':checked')) options |= (1 << 1);
+							if ($('#modal_pass_opt3').is(':checked')) options |= (1 << 2);
+							if ($('#modal_pass_opt4').is(':checked')) options |= (1 << 3);
+
+							ret = {Rnd: len, Name: name, Symbols: options};
 						}
-
-						if ($('#modal_pass_opt2').is(':checked')) {
-							options |= (1 << 1);
-						}
-
-						if ($('#modal_pass_opt3').is(':checked')) {
-							options |= (1 << 2);
-						}
-
-						if ($('#modal_pass_opt4').is(':checked')) {
-							options |= (1 << 3);
-						}
-
-						ret = {
-							Symbols: options,
-							Name: $('#modal_pass_name').val(),
-							Rnd: $('#modal_pass_rnd_len').val()
-						};
 					} else {
-						if ($('#modal_pass_data').val()){
-							ret = {
-								Name: $('#modal_pass_name').val(),
-								Password: $('#modal_pass_data').val()
-							};
+
+						if (!modalValidatePassword(pass)) {
+							$('#modal_pass_data').addClass('input_error');
+						} else {
+							ret = {Name: name, Password: pass};
 						}
 					}
 
-					$('#modal_pass_data').val('');
-					$('#modal_pass_name').val('');
-					$('#modal_add_pass').modal('hide');
+					if (ret) {
+						$('#modal_pass_data').val('');
+						$('#modal_pass_name').val('');
+						$('#modal_add_pass').modal('hide');
+					}
+				} else {
+					$('#modal_pass_name').addClass('input_error');
 				}
 			});
 
@@ -510,7 +634,7 @@ function modalAddWallet() {
 
 		let ret = false;
 		let segwit = ['BTC'];
-		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'BCH', 'XRP', 'ETH'];
+		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'BCH', 'XRP', 'ETH', 'EOS'];
 
 		$('#modal_wallet_key')
 			.val('')
@@ -532,20 +656,28 @@ function modalAddWallet() {
 		});
 
 		$('#modal_wallet_type')
-			.val('Bitcoin - (BTC)')
+			.val('NONE')
+			.removeClass('input_error')
 			.unbind('change').on('change', () => {
 
-				let val = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
-				let isSegWit = (segwit.indexOf(val) >= 0);
-				let isTestNet = (testnet.indexOf(val) >= 0);
+				if ($('#modal_wallet_type').val() === 'NONE') {
+						$('#modal_wallet_type').addClass('input_error');
+				} else {
 
-				$('#modal_wallet_segwit')
-					.prop('checked', false)
-					.prop('disabled', !isSegWit);
+					let val = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
+					let isSegWit = (segwit.indexOf(val) >= 0);
+					let isTestNet = (testnet.indexOf(val) >= 0);
 
-				$('#modal_wallet_testnet')
-					.prop('checked', false)
-					.prop('disabled', !isTestNet);
+					$('#modal_wallet_segwit')
+						.prop('checked', false)
+						.prop('disabled', !isSegWit);
+
+					$('#modal_wallet_testnet')
+						.prop('checked', false)
+						.prop('disabled', !isTestNet);
+
+					$('#modal_wallet_type').removeClass('input_error');
+				}
 			});
 
 		$('#modal_wallet_rnd')
@@ -560,23 +692,27 @@ function modalAddWallet() {
 
 				if (modalValidateName($('#modal_wallet_name').val())) {
 
-					let options = {};
-					let coin = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
+					if ($('#modal_wallet_type').val() === 'NONE') {
+						$('#modal_wallet_type').addClass('input_error');
+					} else {
+						let options = {};
+						let coin = $('#modal_wallet_type').val().split('(')[1].split(')')[0];
 
-					if ($('#modal_wallet_rnd').is(':checked')) options = Object.assign(options, {Rnd: true});
-					if ($('#modal_wallet_segwit').is(':checked')) options = Object.assign(options, {SegWit: true});
-					if ($('#modal_wallet_testnet').is(':checked')) options = Object.assign(options, {TestNet: true});
+						if ($('#modal_wallet_rnd').is(':checked')) options = Object.assign(options, {Rnd: true});
+						if ($('#modal_wallet_segwit').is(':checked')) options = Object.assign(options, {SegWit: true});
+						if ($('#modal_wallet_testnet').is(':checked')) options = Object.assign(options, {TestNet: true});
 
-					ret = {
-						Options: options,
-						Name: $('#modal_wallet_name').val(),
-						Key: $('#modal_wallet_key').val(),
-						Type: coin
-					};
+						ret = {
+							Type: coin,
+							Options: options,
+							Key: $('#modal_wallet_key').val(),
+							Name: $('#modal_wallet_name').val(),
+						};
 
-					$('#modal_wallet_key').val('');
-					$('#modal_wallet_name').val('');
-					$('#modal_add_wallet').modal('hide');
+						$('#modal_wallet_key').val('');
+						$('#modal_wallet_name').val('');
+						$('#modal_add_wallet').modal('hide');
+					}
 				}
 			});
 
@@ -595,10 +731,202 @@ function modalAddWallet() {
 		});
 
 		$('#modal_add_wallet').unbind('shown.bs.modal').on('shown.bs.modal', () => {
-			$('#modal_wallet_name').focus();
+			$('#modal_wallet_type').focus();
 		});
 
 		$('#modal_add_wallet').modal();
+	});
+}
+
+function modalEosBuyRam(receiver = '') {
+	return new Promise((resolve) => {
+
+		let ret = false;
+
+		$('#modal_eos_buy_ram_amount').val('');
+		$('#modal_eos_buy_ram_receiver').val(receiver);
+		$('#modal_eos_buy_ram_amount_type').text('RAM amount to buy in EOS');
+
+		$('#modal_eos_buy_ram_type')
+			.val('EOS')
+			.unbind('change').on('change', () => {
+
+				if ($('#modal_eos_buy_ram_type').val() === 'EOS') {
+					$('#modal_eos_buy_ram_amount_type').text('RAM amount to buy in EOS');
+				} else {
+					$('#modal_eos_buy_ram_amount_type').text('RAM amount to buy in Bytes');
+				}
+			});
+
+		$('#modal_eos_buy_ram_ok' )
+			.unbind('click')
+			.on('click', () => {
+
+				let type = $('#modal_eos_buy_ram_type').val();
+				let receiver = $('#modal_eos_buy_ram_receiver').val();
+				let amount = bigNum($('#modal_eos_buy_ram_amount').val().replace(',', '.').trim());
+
+				if (amount && receiver) {
+					ret = {
+						type: type,
+						amount: amount,
+						receiver: receiver
+					};
+
+					$('#modal_eos_buy_ram').modal('hide');
+				}
+			});
+
+		$(document).unbind('keyup').keyup((e) => {
+			if (e.which === 13) {
+				$('#modal_eos_buy_ram_ok').click()
+			}
+		});
+
+		$('#modal_eos_buy_ram_cancel').unbind('click').on('click', () => {
+			$('#modal_eos_buy_ram').modal('hide');
+		});
+
+		$('#modal_eos_buy_ram').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
+			resolve(ret);
+		});
+
+		$('#modal_eos_buy_ram').unbind('shown.bs.modal').on('shown.bs.modal', () => {
+			$('#modal_eos_buy_ram_amount').focus();
+		});
+
+		$('#modal_eos_buy_ram').modal();
+	});
+}
+
+
+function modalEosStake(receiver = '', stake = false) {
+	return new Promise((resolve) => {
+
+		let ret = false;
+
+		$('#modal_eos_stake_cpu_amount').val('');
+		$('#modal_eos_stake_net_amount').val('');
+		$('#modal_eos_stake_receiver').val(receiver);
+		$('#modal_eos_stake_transfer').prop('checked', false);
+
+		if (stake) {
+			$('#modal_eos_stake_title').text('EOS Stake');
+			$('#modal_eos_stake_receiver_text').text('Stake receiver');
+			$('#modal_eos_stake_cpu_amount_text').text('CPU stake amount');
+			$('#modal_eos_stake_net_amount_text').text('NET stake amount');
+			$('#modal_eos_stake_cpu_amount').attr('placeholder', 'Enter EOS amount to stake');
+			$('#modal_eos_stake_net_amount').attr('placeholder', 'Enter EOS amount to stake');
+			$('#modal_eos_stake_transfer_section').show();
+		} else {
+			$('#modal_eos_stake_title').text('EOS Unstake');
+			$('#modal_eos_stake_receiver_text').text('Stake holder');
+			$('#modal_eos_stake_cpu_amount_text').text('CPU unstake amount');
+			$('#modal_eos_stake_net_amount_text').text('NET unstake amount');
+			$('#modal_eos_stake_cpu_amount').attr('placeholder', 'Enter EOS amount to unstake');
+			$('#modal_eos_stake_net_amount').attr('placeholder', 'Enter EOS amount to unstake');
+			$('#modal_eos_stake_transfer_section').hide();
+		}
+
+		$('#modal_eos_stake_ok' )
+			.unbind('click')
+			.on('click', () => {
+
+				let addr = $('#modal_eos_stake_receiver').val();
+				let valCpu = bigNum($('#modal_eos_stake_cpu_amount').val().replace(',', '.').trim());
+				let valNet = bigNum($('#modal_eos_stake_net_amount').val().replace(',', '.').trim());
+				let transfer = $('#modal_eos_stake_transfer').is(':checked');
+
+				if (valCpu && valNet && addr) {
+					ret = {
+						receiver: addr,
+						amountCPU: valCpu,
+						amountNET: valNet,
+						transfer: transfer
+					};
+
+					$('#modal_eos_stake').modal('hide');
+				}
+			});
+
+		$(document).unbind('keyup').keyup((e) => {
+			if (e.which === 13) {
+				$('#modal_eos_stake_ok').click()
+			}
+		});
+
+		$('#modal_eos_stake_cancel').unbind('click').on('click', () => {
+			$('#modal_eos_stake').modal('hide');
+		});
+
+		$('#modal_eos_stake').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
+			resolve(ret);
+		});
+
+		$('#modal_eos_stake').unbind('shown.bs.modal').on('shown.bs.modal', () => {
+			$('#modal_eos_stake_cpu_amount').focus();
+		});
+
+		$('#modal_eos_stake').modal();
+	});
+}
+
+function modalEosNewAccount() {
+	return new Promise((resolve) => {
+
+		let ret = false;
+
+		$('#modal_eos_new_acc_name').val('');
+		$('#modal_eos_new_acc_owner_key').val('');
+		$('#modal_eos_new_acc_active_key').val('');
+		$('#modal_eos_new_acc_cpu_amount').val('');
+		$('#modal_eos_new_acc_net_amount').val('');
+		$('#modal_eos_new_acc_ram_amount').val('4096');
+
+		$('#modal_eos_new_acc_ok' )
+			.unbind('click')
+			.on('click', () => {
+
+				let name = $('#modal_eos_new_acc_name').val().trim();
+				let ownerKey = $('#modal_eos_new_acc_owner_key').val().trim();
+				let activeKey = $('#modal_eos_new_acc_active_key').val().trim();
+				let ram = parseInt($('#modal_eos_new_acc_ram_amount').val().trim());
+				let net = bigNum($('#modal_eos_new_acc_net_amount').val().replace(',', '.').trim());
+				let cpu = bigNum($('#modal_eos_new_acc_cpu_amount').val().replace(',', '.').trim());
+
+				if (name && ownerKey && activeKey && net && cpu && !isNaN(ram)) {
+					ret = {
+						amountRAM: ram,
+						amountNET: net,
+						amountCPU: cpu,
+						accountName: name,
+						ownerKey: ownerKey,
+						activeKey: activeKey
+					};
+
+					$('#modal_eos_new_acc').modal('hide');
+				}
+			});
+
+		$(document).unbind('keyup').keyup((e) => {
+			if (e.which === 13) {
+				$('#modal_eos_new_acc_ok').click()
+			}
+		});
+
+		$('#modal_eos_new_acc_cancel').unbind('click').on('click', () => {
+			$('#modal_eos_new_acc').modal('hide');
+		});
+
+		$('#modal_eos_new_acc').unbind('hidden.bs.modal').on('hidden.bs.modal', () => {
+			resolve(ret);
+		});
+
+		$('#modal_eos_new_acc').unbind('shown.bs.modal').on('shown.bs.modal', () => {
+			$('#modal_eos_new_acc_name').focus();
+		});
+
+		$('#modal_eos_new_acc').modal();
 	});
 }
 //-------------------------------------  Wallet modals  -------------------------------------------------------------------
@@ -770,7 +1098,7 @@ function modalAboutShow(serial) {
 			.unbind('shown.bs.modal')
 			.on('shown.bs.modal', () => resolve())
 			.modal({keyboard: true});
-			
+
 		$('#about_serial')
 			.text(serial)
 			.unbind('click')
@@ -880,13 +1208,13 @@ function modalFwUpdateShow(versionFirmware)
 		$('#modal_update_fw_ok')
 			.hide()
 			.unbind('click')
-			.on('click', () => {$("#modal_update_fw").modal('hide')});
+			.on('click', () => {$('#modal_update_fw').modal('hide')});
 
 		$('#modal_update_fw_cancel')
 			.show()
 			.prop('disabled', false)
 			.unbind('click')
-			.on('click', () => {$("#modal_update_fw").modal('hide')});
+			.on('click', () => {$('#modal_update_fw').modal('hide')});
 
 		$('#modal_update_fw_start')
 			.show()
@@ -898,7 +1226,7 @@ function modalFwUpdateShow(versionFirmware)
 				if (e.which === 13) {
 					if (!$('#modal_update_fw_start').is(':disabled'))
 					{
-						$("#modal_update_fw_start").click();
+						$('#modal_update_fw_start').click();
 					}
 				}
 			});			
@@ -913,9 +1241,9 @@ function modalFwUpdateShow(versionFirmware)
 
 function modalFwUpdateWait() {
 	return new Promise((resolve) => {
-		$("#modal_update_fw")
-			.unbind("hidden.bs.modal")
-			.on("hidden.bs.modal", () => resolve());
+		$('#modal_update_fw')
+			.unbind('hidden.bs.modal')
+			.on('hidden.bs.modal', () => resolve());
 	});
 }
 //-------------------------------------  Update firmware modals  ----------------------------------------------------------
@@ -930,9 +1258,9 @@ function modalBackupRestoreShow(title) {
 		$('#modal_backup_title').text(title);
 		$('#modal_backup_progress').css('width', 0 + '%').attr('aria-valuenow', 0); 
 
-		$("#modal_backup")
-			.unbind("shown.bs.modal")
-			.on("shown.bs.modal", () => resolve())
+		$('#modal_backup')
+			.unbind('shown.bs.modal')
+			.on('shown.bs.modal', () => resolve())
 			.modal({keyboard: false});
 	});
 }
