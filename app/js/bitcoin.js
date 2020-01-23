@@ -62,7 +62,7 @@ const bitcoinValidateAddr = (addr, net) => {
 };
 
 const bitcoinCashValidateAddr = (addr, testnet) => {
-	let net = testnet ? 'testnet' : 'livened';
+	let net = testnet ? 'testnet' : 'livenet';
 
 	try {
 		let ret = bitcore.Address.isValid(addr, net);
