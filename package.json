@@ -67,7 +67,7 @@
   "eosjs": "^20.0.3",
   "ethereumjs-tx": "^2.1.2",
   "ethereumjs-util": "^6.2.0",
-  "jquery": "^3.4.1",
+  "jquery": "^3.5.0",
   "node-hid": "^1.1.0",
   "photonkit": "^0.1.2",
   "popper.js": "^1.16.0",
