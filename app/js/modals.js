@@ -634,7 +634,7 @@ function modalAddWallet() {
 
 		let ret = false;
 		let segwit = ['BTC'];
-		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'BCH', 'XRP', 'ETH', 'EOS'];
+		let testnet = ['BTC', 'LTC', 'DOGE', 'DASH', 'BCH', 'BSV', 'XRP', 'ETH', 'EOS'];
 
 		$('#modal_wallet_key')
 			.val('')

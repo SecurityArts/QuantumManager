@@ -1,5 +1,6 @@
 'use strict';
 
+const bsv = require('bsv');
 const bitcoin = require('bitcoinjs-lib');
 const bitcore = require('bitcore-lib-cash');
 const coinSelect = require('coinselect');
@@ -13,6 +14,9 @@ const coinPrmBtcTestNet = 	{name: 'Bitcoin Testnet',		ticker: 'BTC',	fee: 10,	fe
 
 const coinPrmBch = 			{name: 'Bitcoin Cash',			ticker: 'BCH',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bch/address/'};
 const coinPrmBchTestNet = 	{name: 'Bitcoin Cash Testnet',	ticker: 'BCH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bchtest/address/'};
+
+const coinPrmBsv = 			{name: 'Bitcoin SV',			ticker: 'BSV',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000,	explorer: 'https://whatsonchain.com/address/'};
+const coinPrmBsvTestNet = 	{name: 'Bitcoin SV Testnet',	ticker: 'BSV',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000,	explorer: 'https://test.whatsonchain.com/address/'};
 
 const coinPrmLtc = 			{name: 'LiteCoin',				ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://insight.litecore.io/address/'};
 const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',		ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://testnet.litecore.io/address/'};
@@ -44,6 +48,7 @@ const walletGetBtcCoinParameters = (coin, testnet) => {
 	switch (coin) {
 		case 'BTC':		if (testnet) return coinPrmBtcTestNet; 		else return coinPrmBtc; break;
 		case 'BCH':		if (testnet) return coinPrmBchTestNet; 		else return coinPrmBch; break;
+		case 'BSV':		if (testnet) return coinPrmBsvTestNet; 		else return coinPrmBsv; break;
 		case 'XSN':		if (testnet) return coinPrmXsn; 			else return coinPrmXsn; break;
 		case 'LTC':		if (testnet) return coinPrmLtcTestNet; 		else return coinPrmLtc; break;
 		case 'DASH':	if (testnet) return coinPrmDashTestNet; 	else return coinPrmDash; break;										
@@ -61,25 +66,29 @@ const bitcoinValidateAddr = (addr, net) => {
 	}
 };
 
-const bitcoinCashValidateAddr = (addr, testnet) => {
-	let net = testnet ? 'testnet' : 'livened';
+const bitcoinCashValidateAddr = (addr, testnet, coin) => {
+	let net = (testnet ? 'testnet' : 'livenet');
+	let lib = ((coin === 'BSV') ? bsv: bitcore);
 
 	try {
-		let ret = bitcore.Address.isValid(addr, net);
+		let ret = lib.Address.isValid(addr, net);
 		return ret;
 	} catch (err) {
 		return false;
 	}
 };
 
+
 const bitcoinTxClearInputScripts = (tx, coin) => {
 	switch (coin) {
+		case 'BSV':
 		case 'BCH':
+			let lib = ((coin === 'BSV') ? bsv: bitcore);
 			for (let i = 0; i < tx.inputs.length; i++) {
-				tx.inputs[i].setScript(bitcore.Script());
+				tx.inputs[i].setScript(lib.Script());
 			}
 			break;
-
+			
 		default:
 			for (let i = 0; i < tx.ins.length; i++) {
 				tx.ins[i].script = bitcoin.script.compile([]);
@@ -90,9 +99,11 @@ const bitcoinTxClearInputScripts = (tx, coin) => {
 
 const bitcoinTxAddSignatures = (tx, signatures, coin) => {
 	switch (coin) {
+		case 'BSV':
 		case 'BCH':
+			let lib = ((coin === 'BSV') ? bsv: bitcore);
 			for (let i = 0; i < tx.inputs.length; i++) {
-				tx.inputs[i].setScript(bitcore.Script.fromHex(signatures[i]));
+				tx.inputs[i].setScript(lib.Script.fromHex(signatures[i]));
 			}		
 			break;
 
@@ -104,8 +115,14 @@ const bitcoinTxAddSignatures = (tx, signatures, coin) => {
 	}
 }
 
+const bitcoinScriptFromHex = (script, coin) => {
+	let lib = ((coin === 'BSV') ? bsv: bitcore);
+	return lib.Script.fromHex(script)
+}
+
 const bitcoinTxSerialize = (tx, coin) => {
 	switch (coin) {
+		case 'BSV':
 		case 'BCH':
 			try {
 				let txSerial = tx.serialize({
@@ -126,11 +143,12 @@ const bitcoinTxSerialize = (tx, coin) => {
 
 const bitcoinGetUnspentOutputs = async (coin, addr, testnet, timeout) => {
 	return new Promise((resolve) => {
-
+5
 		let ret = false;
 		let tmr = setTimeout(() => resolve(ret), timeout);
 
 		$.get(bitcoinApiAddrUnspent, {coin: coin, addr: addr, testnet: testnet, confirmations: 1, rnd: rnd()}).then((utxos) => {
+
 			clearTimeout(tmr);
 			if (utxos && utxos.length) ret = utxos;
 			resolve(ret);
@@ -141,6 +159,7 @@ const bitcoinGetUnspentOutputs = async (coin, addr, testnet, timeout) => {
 	});
 };
 
+
 const bitcoinPushTx = async (coin, tx, testnet, timeout) => {
 	return new Promise((resolve) => {
 
@@ -148,7 +167,7 @@ const bitcoinPushTx = async (coin, tx, testnet, timeout) => {
 
 		$.post(bitcoinApiAddrPushTx, {coin: coin, tx: tx, testnet: testnet}).done((result) => {
 			let ret = 'Unknown server response';
-
+			
 			clearTimeout(tmr);
 			if (result)	{
 				if (result.result) {

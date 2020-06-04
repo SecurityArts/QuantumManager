@@ -145,8 +145,8 @@ async function walletSendBTC(wallet) {
 
 
 
-//-------------------------------------  Bitcoin Cash BCH  ----------------------------------------------------------------
-async function walletSendBCH(wallet) {
+//-------------------------------------  Bitcoin Cash BCH and BSV  --------------------------------------------------------
+async function walletSendBitcoinCash(wallet) {
 
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
 	let sendFeeStr = $('#wallet_send_fee').val().replace(',', '.').trim();
@@ -160,7 +160,7 @@ async function walletSendBCH(wallet) {
 	let balance = bigNumMult(walletBalance, fractions);
 
 
-	if (!bitcoinCashValidateAddr(sendAddr, wallet.Options.Testnet)) {
+	if (!bitcoinCashValidateAddr(sendAddr, wallet.Options.Testnet, wallet.Type)) {
 		infoShow('Error', 'Invalid send address', 'error', 5000);
 		return;
 	}
@@ -190,7 +190,7 @@ async function walletSendBCH(wallet) {
 	}
 
 	let signatures = [];
-	let tx = new bitcore.Transaction();
+	let tx = ((wallet.Type === 'BSV') ? new bsv.Transaction() : new bitcore.Transaction());
 
 	inputs.forEach(input => {
 		tx.from({txId: input.txId, script: input.script, satoshis: input.value, outputIndex: input.vout});
@@ -211,7 +211,7 @@ async function walletSendBCH(wallet) {
 	for (let i = 0; i < tx.inputs.length; i++) {
 
 		bitcoinTxClearInputScripts(tx, wallet.Type);
-		tx.inputs[i].setScript(bitcore.Script.fromHex(inputs[i].script));
+		tx.inputs[i].setScript(bitcoinScriptFromHex(inputs[i].script, wallet.Type));
 
 		let txSerial = bitcoinTxSerialize(tx, wallet.Type);
 		if (!txSerial) {
@@ -256,7 +256,7 @@ async function walletSendBCH(wallet) {
 
 	modalTransactionHide();
 }
-//-------------------------------------  Bitcoin Cash BCH  ----------------------------------------------------------------
+//-------------------------------------  Bitcoin Cash BCH and BSV  --------------------------------------------------------
 
 
 
@@ -666,9 +666,10 @@ async function walletSend() {
 				break
 
 			case 'BCH':
-				await walletSendBCH(walletsCurrent);
+			case 'BSV':
+				await walletSendBitcoinCash(walletsCurrent);
 				break
-
+				
 			case 'EOS':
 				await walletSendEOS(walletsCurrent);
 				break;
@@ -940,7 +941,10 @@ async function walletAdd() {
 				generalUpdateInfo();
 				await walletSelect(walletsList.Wallets.length);
 
-				if (await modalYesNo('Cancel', 'Yes', 'Attention!!!', 'New wallet added. Please press "Yes" to make device backup copy.')) {
+				await modalYesNo('', 'Show SEED', 'New wallet added', 'Now press "Show SEED" button and write down the seed phrase from the Quantum LCD, then press device OK button.');
+				await hidShowWalletKey(walletsCurrent.Index, 320000);
+
+				if (await modalYesNo('Cancel', 'Yes', 'Attention!!!', 'Now we strongly recommend to make device full backup copy. Please press "Yes" to proceed.')) {
 					await settingsBackup();
 				}
 			}

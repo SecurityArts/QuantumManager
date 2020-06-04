@@ -559,6 +559,10 @@ async function hidGetWalletData(index, timeout = 40000) {
 	return await hidCommand(jsonToArray({Command: 'GetWalletData', Index: index, CmdId: rnd()}), timeout);
 }
 
+async function hidShowWalletKey(index, timeout = 320000) {
+	return await hidCommand(jsonToArray({Command: 'ShowWalletKey', Index: index, CmdId: rnd()}), timeout);
+}
+
 async function hidGetWalletPubKey(index, timeout = 2000) {
 	return await hidCommand(jsonToArray({Command: 'GetWalletPubKey', Index: index, CmdId: rnd()}), timeout);
 }

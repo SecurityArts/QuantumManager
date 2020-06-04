@@ -164,7 +164,7 @@ async function uiCheckSoftwareUpdates(localVersion) {
 				filePath = app.getPath('userData') + '/' + 'QuantumManager_mac.dmg';
 				break;
 		}
-
+		
 		if (compareVersions(serverVersion, localVersion)) {
 
 			if (await modalYesNo('Cancel', 'Ok', 'Update available', `New Quantum Manager version ${serverVersion} is available. Press OK for update. ` + serverMsg)) {
@@ -180,7 +180,7 @@ async function uiCheckSoftwareUpdates(localVersion) {
 					if (process.platform === 'linux') {
 						shell.showItemInFolder(filePath);
 					} else {
-						shell.openItem(filePath);
+						shell.openPath(filePath);
 					}
 
 					await sleep(1000);

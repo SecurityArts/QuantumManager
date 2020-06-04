@@ -4,7 +4,7 @@
  "author": "SecurityArts",
  "description": "SecurityArts Quantum Manager",
  "main": "main.js",
- "version": "1.0.5",
+ "version": "1.0.6",
  "license": "MIT",
  "scripts": {
   "start": "electron .",
@@ -52,29 +52,30 @@
   }
  },
  "devDependencies": {
-  "electron": "^7.1.9",
-  "electron-builder": "^21.2.0"
+  "electron": "^9.0.0",
+  "electron-builder": "^22.6.1"
  },
  "dependencies": {
   "auto-launch": "^5.0.5",
-  "bitcoinjs-lib": "^4.0.5",
-  "bitcore-lib-cash": "^8.14.4",
-  "bootstrap": "^4.4.1",
+  "bitcoinjs-lib": "^5.1.8",
+  "bitcore-lib-cash": "^8.20.3",
+  "bootstrap": "^4.5.0",
   "bootstrap-material-design": "^4.1.2",
-  "coinselect": "^3.1.11",
+  "bsv": "^1.5.3",
+  "coinselect": "^3.1.12",
   "decimal.js": "^10.2.0",
-  "electron-store": "^5.1.0",
+  "electron-store": "^5.1.1",
   "eosjs": "^20.0.3",
   "ethereumjs-tx": "^2.1.2",
-  "ethereumjs-util": "^6.2.0",
-  "jquery": "^3.4.1",
-  "node-hid": "^1.1.0",
+  "ethereumjs-util": "^7.0.1",
+  "jquery": "^3.5.1",
+  "node-hid": "^1.2.0",
   "photonkit": "^0.1.2",
-  "popper.js": "^1.16.0",
+  "popper.js": "^1.16.1",
   "qr-image": "^3.2.0",
-  "request": "^2.88.0",
-  "ripple-lib": "^1.6.2",
+  "request": "^2.88.2",
+  "ripple-lib": "^1.7.0",
   "toastr": "^2.1.4",
-  "usb-detection": "^4.7.0"
+  "usb-detection": "^4.9.0"
  }
 }
