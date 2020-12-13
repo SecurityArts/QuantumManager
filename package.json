@@ -4,7 +4,7 @@
  "author": "SecurityArts",
  "description": "SecurityArts Quantum Manager",
  "main": "main.js",
- "version": "1.0.6",
+ "version": "1.0.7",
  "license": "MIT",
  "scripts": {
   "start": "electron .",
@@ -28,6 +28,7 @@
    "uninstallerSidebar": "installersidebar.bmp"
   },
   "dmg": {
+   "sign": false,
    "icon": "build/1024x1024.png"
   },
   "win": {
@@ -43,8 +44,12 @@
   },
   "mac": {
    "target": "dmg",
+   "hardenedRuntime": true,
+   "gatekeeperAssess": false,
    "icon": "build/1024x1024.png",
-   "category": "public.app-category.utilities"
+   "category": "public.app-category.utilities",
+   "entitlements": "./build/entitlements.mac.inherit.plist",
+   "entitlementsInherit": "./build/entitlements.mac.inherit.plist"
   },
   "linux": {
    "target": "appImage",

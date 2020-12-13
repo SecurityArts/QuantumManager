@@ -60,7 +60,7 @@ div#section_wait {
 	background-size: 100% 100%;
 }
 
-#modal_add_pass label, #modal_add_wallet label, #modal_add_user label, #modal_eos_buy_ram label, #modal_eos_stake label, #modal_eos_new_acc label {
+#modal_add_pass label, #modal_add_wallet label, #modal_add_user label, #modal_eos_buy_ram label, #modal_eos_stake label, #modal_eos_new_acc label, #modal_exchange label {
 	margin-bottom: -5px;
 }
 
@@ -91,7 +91,6 @@ div#section_wait {
 
 
 
-
 .draggable {
 	user-select: none;
 	-webkit-app-region: drag;
@@ -109,6 +108,29 @@ input::placeholder {
 .modal-header {
 	padding: 13px 13px 10px 15px !important;
 }
+
+
+
+#modal_exchange_policy .modal-footer {
+	border-top: 1px solid #585858;
+}
+
+#modal_exchange_policy .modal-header {
+	border-bottom: 1px solid #585858;
+}
+
+#modal_exchange_policy a:link {
+	color:#e0e0e0;
+	text-decoration: none;
+}
+
+#modal_exchange_policy a:hover {
+	color:#10d078;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+
 
 #title-bar-btns {
 	-webkit-app-region: no-drag;

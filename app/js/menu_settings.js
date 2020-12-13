@@ -84,7 +84,7 @@ async function settingsBackup() {
 	if (!hidIsBusy()) {
 
 		infoShow('Attention', 'Enter crypt key on device', 'info', 5000);
-		let ret = await hidBackupKey(60000);
+		let ret = await hidBackupKey(180000);
 
 		if (ret.Command === 'BackupKey') {
 
@@ -149,7 +149,7 @@ async function settingsRestore() {
 				let size = buff.length;
 
 				infoShow('Attention', 'Enter crypt key on device', 'info', 5000);
-				ret = await hidBackupKey(60000);
+				ret = await hidBackupKey(180000);
 
 				if (ret.Command === 'BackupKey') {
 

@@ -4,6 +4,16 @@ const coinApiAddrFee = 		'https://wallet.security-arts.com/api/getfee/';
 const coinApiAddrRate =		'https://wallet.security-arts.com/api/getrate/';
 const coinApiAddrBalance =	'https://wallet.security-arts.com/api/addressbalance/';
 
+const exchApiCreateTx         = 'https://wallet.security-arts.com/api/exchangeCreateTx/';
+const exchApiGetCurrencies    = 'https://wallet.security-arts.com/api/exchangeGetCurrencies/';
+const exchApiGetMinAmount     = 'https://wallet.security-arts.com/api/exchangeGetMinAmount/';
+const exchApiGetExchAmount    = 'https://wallet.security-arts.com/api/exchangeGetExchAmount/';
+const exchApiGetExchGetStatus = 'https://wallet.security-arts.com/api/exchangeGetStatus/';
+
+const coinSupported			  = ['BTC', 'ETH', 'LTC', 'BCH', 'BSV', 'XRP', 'DASH', 'EOS', 'DOGE', 'XSN'];
+const coinSupportedExchange	  = ['BTC', 'ETH', 'LTC', 'BCH', 'BSV', 'XRP', 'DASH', 'EOS', 'DOGE'];
+
+
 let walletBalance = 0;
 let walletsList = false;
 let walletsCurrent = false;
@@ -32,6 +42,13 @@ async function loadWallets() {
 	}
 }
 
+function walletIsCoinSupported(coin) {
+	return (coinSupported.indexOf(coin) >= 0);
+}
+
+function walletIsCoinExchangeSupported(coin) {
+	return (coinSupportedExchange.indexOf(coin) >= 0);
+}
 
 
 //-------------------------------------  Bitcoin BTC  ---------------------------------------------------------------------
@@ -267,6 +284,7 @@ async function walletSendXRP(wallet) {
 	let sendFeeStr = $('#wallet_send_fee').val().replace(',', '.').trim();
 	let sendAmountStr = $('#wallet_send_amount_btc').val().replace(',', '.').trim();
 	let fractions = walletGetXrpCoinParameters(wallet.Type, wallet.Options.Testnet).fractions;
+	let destTag = $('#wallet_xrp_dest_tag').val().trim(); 
 
 	let sendFee = bigNumMult(sendFeeStr, fractions);
 	let sendAmount = bigNumMult(sendAmountStr, fractions);
@@ -292,16 +310,22 @@ async function walletSendXRP(wallet) {
 		infoShow('Error', 'Wallet balance is to low', 'error', 5000);
 		return;
 	}
-
+	
+	if (destTag && (bigNum(destTag) == 0)) {
+		infoShow('Error', 'Wrong destination tag', 'error', 5000);
+		return;
+	}
+	
 	let ret = await hidGetWalletPubKey(wallet.Index, 2000);
 	if (ret.Error) {
 		infoShow('Error', ret.Error, 'error', 5000);
 		return;
 	}
-
+	
+	destTag = bigNum(destTag);
 	balance = bigNumSub(balance, sendTotal);
 	await modalTransactionShow(wallet.Addr, sendAddr, sendAmountStr, sendFeeStr, bigNumToStr(bigNumDiv(balance, fractions), 7), ' XRP', 'Getting wallet data, please wait');
-	let tx = await rippleGenerateTransaction(wallet.Addr, sendAddr, ret.PubKey, +sendAmount, +sendFee, wallet.Options.Testnet, 40, 5000);
+	let tx = await rippleGenerateTransaction(wallet.Addr, sendAddr, ret.PubKey, +sendAmount, +sendFee, wallet.Options.Testnet, 40, destTag.toFixed(), 5000);
 
 	if (!tx) {
 		modalTransactionHide();
@@ -346,6 +370,7 @@ async function walletSendEOS(wallet) {
 	let sendAddr = $('#wallet_send_addr').val().trim(); 
 	let sendAmountStr = $('#wallet_send_amount_btc').val().replace(',', '.').trim();
 	let fractions = walletGetEosCoinParameters(wallet.Type, wallet.Options.Testnet).fractions;
+	let memo = $('#wallet_eos_memo').val();
 
 	let sendAmount = bigNumMult(sendAmountStr, fractions);
 	let balance = bigNumMult(walletBalance, fractions);
@@ -367,7 +392,7 @@ async function walletSendEOS(wallet) {
 
 	balance = bigNumSub(balance, sendAmount);
 	await modalTransactionShow(wallet.Addr, sendAddr, sendAmountStr, '0', bigNumToStr(bigNumDiv(balance, fractions), 8), ' EOS', 'Getting wallet data, please wait');
-	let tx = await eosGenerateTxTransfer(wallet.Addr, sendAddr, +sendAmount, wallet.Options.Testnet, 30, 5000);
+	let tx = await eosGenerateTxTransfer(wallet.Addr, sendAddr, +sendAmount, wallet.Options.Testnet, 30, memo, 5000);
 
 	if (!tx) {
 		modalTransactionHide();
@@ -681,6 +706,7 @@ async function walletSend() {
 	}
 }
 
+
 function walletShowCoinSpecificBalance(balance, coin) {
 
 	switch (coin) {
@@ -789,48 +815,6 @@ async function walletGetFee(coin, testnet, divider) {
 	}).catch(() => null);
 }
 
-async function walletGetExchangeRate(coin) {
-
-	$('#wallet_send_amount_btc')
-		.val('')
-		.unbind('input')
-		.attr('placeholder', 'Enter ' + coin +  ' amount');
-
-	$('#wallet_send_amount_usd')
-		.val('')
-		.unbind('input')
-		.attr('placeholder', 'Enter USD amount');
-
-	$.get(coinApiAddrRate, {coin: coin, rnd: rnd()}).then((ret) => {
-
-		ret = bigNum(ret);
-
-		if (+ret != 0) {
-
-			$('#wallet_send_amount_btc').unbind('input').on('input', () => {
-
-				let amount = bigNum($('#wallet_send_amount_btc').val().replace(',', '.').trim());
-
-				if (+amount == 0) {
-					$('#wallet_send_amount_usd').val('');
-				} else {
-					$('#wallet_send_amount_usd').val(bigNumToStr(bigNumMult(amount, ret), 5));
-				}
-			});
-
-			$('#wallet_send_amount_usd').unbind('input').on('input', () => {
-
-				let amount = bigNum($('#wallet_send_amount_usd').val().replace(',', '.').trim());
-
-				if (+amount == 0) {
-					$('#wallet_send_amount_btc').val('');
-				} else {
-					$('#wallet_send_amount_btc').val(bigNumToStr(bigNumDiv(amount, ret), 8));
-				}
-			});
-		}
-	}).catch(() => null);
-}
 
 async function walletSelect(index) {
 	if (index && walletsList && (walletsList.Wallets.length >= index)) {
@@ -844,16 +828,26 @@ async function walletSelect(index) {
 
 		$('#wallet_balance').text('...');
 		$('#wallet_send_addr').val('');
+		
+		$('#wallet_eos_memo').val('');
+		$('#wallet_xrp_dest_tag').val('');
 
 		$('#wallet_alert').hide();
-		$('#wallet_eos_specific').hide();
+		$('#wallet_general_tab').click();
+		
 		$('#wallet_eth_specific').hide();
+		$('#wallet_xrp_specific').hide();
+		$('#wallet_eos_specific1').hide();
+		$('#wallet_eos_specific2').hide();
+		
 		$('#wallet_send_fee').prop("disabled", (walletsCurrent.Type === 'EOS'));
-
+		
 		switch (walletsCurrent.Type) {
 			case 'XRP':
 				params = walletGetXrpCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
 				feeFractions = params.fractions;
+				
+				$('#wallet_xrp_specific').show();
 				break;
 
 			case 'ETH':
@@ -871,9 +865,10 @@ async function walletSelect(index) {
 				if (!walletsCurrent.Addr) {
 					$('#wallet_alert').show();
 				} else {
-					$('#wallet_eos_specific').show();
+					$('#wallet_eos_specific1').show();
 				}
 
+				$('#wallet_eos_specific2').show();
 				$('#wallet_key_pub').text(walletsCurrent.PubKey);
 				$('#wallet_eos_pubkey').text(walletsCurrent.PubKey);
 				break;
@@ -1036,6 +1031,49 @@ async function walletShowData() {
 			$('#section_wallet_key').show();
 		}
 	}
+}
+
+async function walletGetExchangeRate(coin) {
+
+	$('#wallet_send_amount_btc')
+		.val('')
+		.unbind('input')
+		.attr('placeholder', 'Enter ' + coin +  ' amount');
+
+	$('#wallet_send_amount_usd')
+		.val('')
+		.unbind('input')
+		.attr('placeholder', 'Enter USD amount');
+
+	$.get(coinApiAddrRate, {coin: coin, rnd: rnd()}).then((ret) => {
+
+		ret = bigNum(ret);
+
+		if (+ret != 0) {
+
+			$('#wallet_send_amount_btc').unbind('input').on('input', () => {
+
+				let amount = bigNum($('#wallet_send_amount_btc').val().replace(',', '.').trim());
+
+				if (+amount == 0) {
+					$('#wallet_send_amount_usd').val('');
+				} else {
+					$('#wallet_send_amount_usd').val(bigNumToStr(bigNumMult(amount, ret), 5));
+				}
+			});
+
+			$('#wallet_send_amount_usd').unbind('input').on('input', () => {
+
+				let amount = bigNum($('#wallet_send_amount_usd').val().replace(',', '.').trim());
+
+				if (+amount == 0) {
+					$('#wallet_send_amount_btc').val('');
+				} else {
+					$('#wallet_send_amount_btc').val(bigNumToStr(bigNumDiv(amount, ret), 8));
+				}
+			});
+		}
+	}).catch(() => null);
 }
 //-------------------------------------  Wallet  All  ---------------------------------------------------------------------
 

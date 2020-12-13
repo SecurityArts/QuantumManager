@@ -40,7 +40,7 @@ function eosIsValidPubKey(key) {
 
 
 //---------------------------------------  Transactions  ---------------------------------------------------------------
-async function eosBuildTxTransfer(from, to, amount, testnet, refBlockNum, refBlockPrefix, validMinutes)
+async function eosBuildTxTransfer(from, to, amount, testnet, refBlockNum, refBlockPrefix, validMinutes, memo)
 {
 	const chainId = (testnet ? chainIdTestNet : chainIdMainNet);
 
@@ -66,7 +66,7 @@ async function eosBuildTxTransfer(from, to, amount, testnet, refBlockNum, refBlo
 			account: 'eosio.token',
             authorization: [{actor: from, permission: 'active'}],
             data: {
-                memo: '',
+                memo: memo,
 				to: to,
 				from: from,
                 quantity: amount.toFixed(4) + ' EOS'
@@ -428,11 +428,11 @@ async function eosGetBlockNum(addr, testnet, timeout) {
 	});
 }
 
-async function eosGenerateTxTransfer(from, to, amount, testnet, validMinutes, timeout) {
+async function eosGenerateTxTransfer(from, to, amount, testnet, validMinutes, memo, timeout) {
 	let block_num = await eosGetBlockNum(from, testnet, timeout);
 
 	if (block_num) {
-		return await eosBuildTxTransfer(from, to, amount, testnet, block_num.ref_block_num, block_num.ref_block_prefix, validMinutes);
+		return await eosBuildTxTransfer(from, to, amount, testnet, block_num.ref_block_num, block_num.ref_block_prefix, validMinutes, memo);
 	}
 
 	return false;

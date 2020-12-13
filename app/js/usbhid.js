@@ -587,7 +587,7 @@ async function hidClearMemory(timeout = 60000) {
 	return await hidCommand(jsonToArray({Command: 'ClearMemory', CmdId: rnd()}), timeout);
 }
 
-async function hidBackupKey(timeout = 60000) {
+async function hidBackupKey(timeout = 180000) {
 	return await hidCommand(jsonToArray({Command: 'BackupKey', CmdId: rnd()}), timeout);
 }
 

@@ -54,7 +54,7 @@ async function rippleGetSeqInfo(addr, testnet, timeout) {
 }
 
 
-async function rippleGenerateTransaction(addrFrom, addrTo, pubKey, amount, fee, testnet, seqOffset, timeout) {
+async function rippleGenerateTransaction(addrFrom, addrTo, pubKey, amount, fee, testnet, seqOffset, destTag, timeout) {
 	let seq = await rippleGetSeqInfo(addrFrom, testnet, timeout);
 
 	if (seq) {
@@ -67,8 +67,9 @@ async function rippleGenerateTransaction(addrFrom, addrTo, pubKey, amount, fee, 
 			Flags: 0x80000000,
 			LastLedgerSequence: seq.ledger_seq + seqOffset,
 			Fee: fee.toString(),
+			DestinationTag: destTag,
 			Sequence: seq.account_seq
-		};
+		}
 	}
 
 	return false;
