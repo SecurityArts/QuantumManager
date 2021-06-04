@@ -9,28 +9,28 @@ const bitcoinApiAddrPushTx =		'https://wallet.security-arts.com/api/pushtx/';
 const bitcoinApiAddrUnspent =		'https://wallet.security-arts.com/api/unspent/';
 
 
-const coinPrmBtc = 			{name: 'Bitcoin',				ticker: 'BTC',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000,	explorer: 'https://blockchain.com/btc/address/'};
-const coinPrmBtcTestNet = 	{name: 'Bitcoin Testnet',		ticker: 'BTC',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000,	explorer: 'https://blockchain.com/btctest/address/'};
+const coinPrmBtc = 			{name: 'Bitcoin',				ticker: 'BTC',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000};
+const coinPrmBtcTestNet = 	{name: 'Bitcoin Testnet',		ticker: 'BTC',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'btc.png',		fractions: 100000000};
 
-const coinPrmBch = 			{name: 'Bitcoin Cash',			ticker: 'BCH',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bch/address/'};
-const coinPrmBchTestNet = 	{name: 'Bitcoin Cash Testnet',	ticker: 'BCH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000,	explorer: 'https://blockchain.com/bchtest/address/'};
+const coinPrmBch = 			{name: 'Bitcoin Cash',			ticker: 'BCH',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000};
+const coinPrmBchTestNet = 	{name: 'Bitcoin Cash Testnet',	ticker: 'BCH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bch.png',		fractions: 100000000};
 
-const coinPrmBsv = 			{name: 'Bitcoin SV',			ticker: 'BSV',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000,	explorer: 'https://whatsonchain.com/address/'};
-const coinPrmBsvTestNet = 	{name: 'Bitcoin SV Testnet',	ticker: 'BSV',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000,	explorer: 'https://test.whatsonchain.com/address/'};
+const coinPrmBsv = 			{name: 'Bitcoin SV',			ticker: 'BSV',	fee: 10,	feeType: 'Fee', feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000};
+const coinPrmBsvTestNet = 	{name: 'Bitcoin SV Testnet',	ticker: 'BSV',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'bsv.png',		fractions: 100000000};
 
-const coinPrmLtc = 			{name: 'LiteCoin',				ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://insight.litecore.io/address/'};
-const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',		ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000,	explorer: 'https://testnet.litecore.io/address/'};
+const coinPrmLtc = 			{name: 'LiteCoin',				ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000};
+const coinPrmLtcTestNet = 	{name: 'LiteCoin Testnet',		ticker: 'LTC',	fee: 10,	feeType: 'Fee',	feeName: 'Litoshi/Byte',	img: 'ltc.png',		fractions: 100000000};
 
-const coinPrmDash =			{name: 'Dash',					ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000,	explorer: 'https://insight.dashevo.org/insight/address/'};
-const coinPrmDashTestNet = 	{name: 'Dash Testnet',			ticker: 'DASH',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000,	explorer: 'https://testnet-insight.dashevo.org/insight/address/'};
+const coinPrmDash =			{name: 'Dash',					ticker: 'DASH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000};
+const coinPrmDashTestNet = 	{name: 'Dash Testnet',			ticker: 'DASH',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'dash.png',	fractions: 100000000};
 
-const coinPrmDoge =  		{name: 'DogeCoin',				ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000,	explorer: 'https://dogechain.info/address/'};
-const coinPrmDogeTestNet = 	{name: 'DogeCoin Testnet',		ticker: 'DOGE',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000,	explorer: 'https://chain.so/address/DOGETEST/'};
+const coinPrmDoge =  		{name: 'DogeCoin',				ticker: 'DOGE',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000};
+const coinPrmDogeTestNet = 	{name: 'DogeCoin Testnet',		ticker: 'DOGE',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'doge.png',	fractions: 100000000};
 
-const coinPrmXsn =			{name: 'XSN Stakenet',			ticker: 'XSN',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000,	explorer: 'https://xsnexplorer.io/addresses/'};
-const coinPrmXsnTestNet =	{name: 'XSN Testnet',			ticker: 'XSN',	fee: 1,		feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000,	explorer: 'https://xsnexplorer.io/addresses/'};
+const coinPrmXsn =			{name: 'XSN Stakenet',			ticker: 'XSN',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000};
+const coinPrmXsnTestNet =	{name: 'XSN Testnet',			ticker: 'XSN',	fee: 10,	feeType: 'Fee',	feeName: 'sat/Byte',		img: 'xsn.png',		fractions: 100000000};
 
-const coinUnknown =			{name: 'Unknown',				ticker: '',		fee: 0, 	feeType: 'Fee',	feeName: '',				img: 'none.png',	fractions: 100000000,	explorer: 'https://google.com/search?q='};
+const coinUnknown =			{name: 'Unknown',				ticker: '',		fee: 0, 	feeType: 'Fee',	feeName: '',				img: 'none.png',	fractions: 100000000};
 
 
 const walletGetBtcNetType = (coin, testnet) => {

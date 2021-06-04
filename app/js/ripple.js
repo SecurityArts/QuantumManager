@@ -6,9 +6,9 @@ const rippleAddrCodec = require('ripple-address-codec');
 const rippleApiAddrPushTx =		'https://wallet.security-arts.com/api/pushtx/';
 const rippleApiAddrUnspent =	'https://wallet.security-arts.com/api/unspent/';
 
-const coinPrmXrp = 			{name: 'Ripple',			ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee', feeName: 'XRP',		img: 'xrp.png',		fractions: 1000000,		explorer: 'https://livenet.xrpl.org/accounts/'};
-const coinPrmXrpTestNet = 	{name: 'Ripple Testnet',	ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee',	feeName: 'XRP',		img: 'xrp.png',		fractions: 1000000,		explorer: 'https://testnet.xrpl.org/accounts/'};
-const coinPrmXrpUnknown =	{name: 'Unknown',			ticker: '',		fee: 0,			feeType: '',	feeName: '',		img: 'none.png',	fractions: 1000000,		explorer: 'https://google.com/search?q='};
+const coinPrmXrp = 			{name: 'Ripple',			ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee', feeName: 'XRP',		img: 'xrp.png',		fractions: 1000000};
+const coinPrmXrpTestNet = 	{name: 'Ripple Testnet',	ticker: 'XRP',	fee: 0.00001,	feeType: 'Fee',	feeName: 'XRP',		img: 'xrp.png',		fractions: 1000000};
+const coinPrmXrpUnknown =	{name: 'Unknown',			ticker: '',		fee: 0,			feeType: '',	feeName: '',		img: 'none.png',	fractions: 1000000};
 
 const walletGetXrpCoinParameters = (coin, testnet) => {
 	if (coin === 'XRP') {

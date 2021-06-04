@@ -2,7 +2,7 @@
 const ipc = require('electron').ipcMain;
 const electron = require('electron');
 const {app, BrowserWindow, Menu, Tray} = require('electron');
-
+const Store = require('electron-store');
 
 let win = null;
 let tray = null;
@@ -46,6 +46,7 @@ const contextMenuHide = Menu.buildFromTemplate([
 	}}
 ]);
 
+Store.initRenderer();
 app.allowRendererProcessReuse = false;
 
 if (!gotTheLock) {
@@ -76,6 +77,7 @@ function createWindow () {
 			show: false, 
 			webPreferences: {
 				nodeIntegration: true,
+				contextIsolation: false,
 				enableRemoteModule: true
 			},
 			icon: __dirname + '/app/icons/512x512.png'});

@@ -6,9 +6,9 @@ const EthereumTx = require('ethereumjs-tx').Transaction;
 const ethereumApiAddrPushTx =	'https://wallet.security-arts.com/api/pushtx/';
 const ethereumApiAddrUnspent =	'https://wallet.security-arts.com/api/unspent/';
 
-const coinPrmEth =			{name: 'Ethereum',			ticker: 'ETH',	fee: 1, feeType: 'Gas Price',	feeName: 'Gwei',	gasLimit: 22000,	img: 'eth.png',		fractions: 1000000000000000000,		explorer: 'https://etherscan.io/address/'};
-const coinPrmEthTestNet =	{name: 'Ethereum Testnet',	ticker: 'ETH',	fee: 1, feeType: 'Gas Price',	feeName: 'Gwei',	gasLimit: 22000,	img: 'eth.png',		fractions: 1000000000000000000,		explorer: 'https://ropsten.etherscan.io/address/'};
-const coinEthUnknown =		{name: 'Unknown',			ticker: '',		fee: 0,	feeType: '', 			feeName: '',		gasLimit: 22000,	img: 'none.png',	fractions: 1000000000000000000,		explorer: 'https://google.com/search?q='};
+const coinPrmEth =			{name: 'Ethereum',			ticker: 'ETH',	fee: 1, feeType: 'Gas Price',	feeName: 'Gwei',	gasLimit: 22000,	img: 'eth.png',		fractions: 1000000000000000000};
+const coinPrmEthTestNet =	{name: 'Ethereum Testnet',	ticker: 'ETH',	fee: 1, feeType: 'Gas Price',	feeName: 'Gwei',	gasLimit: 22000,	img: 'eth.png',		fractions: 1000000000000000000};
+const coinEthUnknown =		{name: 'Unknown',			ticker: '',		fee: 0,	feeType: '', 			feeName: '',		gasLimit: 22000,	img: 'none.png',	fractions: 1000000000000000000};
 
 const walletGetEthCoinParameters = (coin, testnet) => {
 	if (coin === 'ETH') {

@@ -1,8 +1,10 @@
 "use strict";
 
-const coinApiAddrFee = 		'https://wallet.security-arts.com/api/getfee/';
-const coinApiAddrRate =		'https://wallet.security-arts.com/api/getrate/';
-const coinApiAddrBalance =	'https://wallet.security-arts.com/api/addressbalance/';
+const coinApiAddrFee				= 'https://wallet.security-arts.com/api/getfee/';
+const coinApiAddrRate				= 'https://wallet.security-arts.com/api/getrate/';
+const coinApiAddrBalance			= 'https://wallet.security-arts.com/api/addressbalance/';
+const coinApiAddrSpecific			= 'https://wallet.security-arts.com/api/addrspecific/';
+const coinApiAddrGetBlockExplorers	= 'https://wallet.security-arts.com/api/getblockexplorer/';
 
 const exchApiCreateTx         = 'https://wallet.security-arts.com/api/exchangeCreateTx/';
 const exchApiGetCurrencies    = 'https://wallet.security-arts.com/api/exchangeGetCurrencies/';
@@ -15,9 +17,10 @@ const coinSupportedExchange	  = ['BTC', 'ETH', 'LTC', 'BCH', 'BSV', 'XRP', 'DASH
 
 
 let walletBalance = 0;
+let walletCoinToUsd = 0;
 let walletsList = false;
 let walletsCurrent = false;
-
+let walletsBlockExplorers = false;
 
 async function loadWallets() {
 
@@ -672,6 +675,63 @@ async function walletSendETH(wallet) {
 
 	modalTransactionHide();
 }
+
+async function walletEthShowTokens() {
+
+	$('#wallet_eth_specific1').show();
+	$('#table_eth_tokens_data_body').html('');
+	$('#wallet_eth_tokens_total_usd').text('0 USD');
+	$('#wallet_eth_tokens_total_eth').text('0 ETH');
+
+	$.get(coinApiAddrSpecific, {coin: walletsCurrent.Type, addr: walletsCurrent.Addr, testnet: walletsCurrent.Options.Testnet, operation: "gettokens", rnd: rnd()}).then((ret) => {
+
+		if (ret.tokens && ret.tokens.length) {
+
+			let tokensList = [];
+			let valueTotalUSD = 0;
+			let valueTotalETH = 0;
+
+			ret.tokens.forEach((token) => {
+				let price = 0;
+				let valueETH = 0;
+				let valueUSD = 0;
+				let balance = bigNumDiv(token.balance, bigNumPow(10, token.tokenInfo.decimals));
+
+				if (token.tokenInfo.price) {
+					if (token.tokenInfo.price.currency == 'USD') {
+						price = bigNum(token.tokenInfo.price.rate);
+						valueUSD = bigNumMult(balance, token.tokenInfo.price.rate);
+						valueETH = (walletCoinToUsd ? bigNumDiv(valueUSD, walletCoinToUsd): 0);
+						valueTotalUSD = bigNumAdd(valueTotalUSD, valueUSD);
+					}
+				}
+				
+				tokensList.push({name: token.tokenInfo.name, symbol: token.tokenInfo.symbol, quantity: balance, price: price, valueUSD: valueUSD, valueETH: valueETH});
+			});
+
+			if (tokensList.length) {
+				let i = 1;	
+				let rows = '';
+				let colors = ['#F8F8F8', '#FFFFFF'];
+
+				tokensList.sort((a, b) => {return (b.valueUSD - a.valueUSD)});
+				tokensList.forEach((item) => {
+					let price = (item.price ? '$' + bigNumToStr(item.price, 8) : '-');
+					let valueUSD = (item.valueUSD ? '$' + bigNumToStr(item.valueUSD, 2) : '-');
+					let valueETH = (item.valueETH ? bigNumToStr(item.valueETH, 10) : '-');;
+					
+					rows += `<tr style="background-color: ${colors[i & 1]}"><td>${i++}</td><td>${item.name}</td><td>${item.symbol}</td><td>${bigNumToStr(item.quantity, 10)}</td><td>${price}</td><td>${valueUSD}</td><td>${valueETH}</td></tr>`;				
+				});
+
+				valueTotalETH = (walletCoinToUsd ? bigNumDiv(valueTotalUSD, walletCoinToUsd): 0);
+
+				$('#table_eth_tokens_data_body').html(rows);
+				$('#wallet_eth_tokens_total_usd').text(bigNumToStr(valueTotalUSD, 2) + ' USD');
+				$('#wallet_eth_tokens_total_eth').text(bigNumToStr(valueTotalETH, 10) + ' ETH');
+			}
+		}
+	}).catch(() => null);
+}
 //-------------------------------------  Ethereum ETH  --------------------------------------------------------------------
 
 
@@ -792,7 +852,11 @@ function walletParseBalance(balance, coin, addr, testnet, divider) {
 		walletShowCoinSpecificBalance(false, coin);
 	}
 
-	$('#wallet_balance').text(bigNumToStr(walletBalance, 18) + ' ' + coin);
+	if (walletCoinToUsd != 0 && walletBalance != 0) {
+		$('#wallet_balance').html(bigNumToStr(walletBalance, 18) + ' ' + coin + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' + bigNumToStr(bigNumMult(walletBalance, walletCoinToUsd), 2) + ' USD');
+	} else {
+		$('#wallet_balance').text(bigNumToStr(walletBalance, 18) + ' ' + coin );
+	}
 }
 
 
@@ -822,7 +886,10 @@ async function walletSelect(index) {
 		let params;
 		let feeFractions;
 
+		walletBalance = 0;
+		walletCoinToUsd = 0;
 		walletsCurrent = walletsList.Wallets[index - 1];
+		
 		$('#wallet_name').text(walletsCurrent.Name);
 		$('#wallet_addr').text(walletsCurrent.Addr);
 
@@ -834,14 +901,17 @@ async function walletSelect(index) {
 
 		$('#wallet_alert').hide();
 		$('#wallet_general_tab').click();
-		
-		$('#wallet_eth_specific').hide();
+
+		$('#section_wallet_key').hide();
 		$('#wallet_xrp_specific').hide();
 		$('#wallet_eos_specific1').hide();
 		$('#wallet_eos_specific2').hide();
-		
+		$('#wallet_eth_specific1').hide();
+		$('#wallet_eth_specific2').hide();
+
+		$('#wallet_block_explorer').prop("disabled", !walletsBlockExplorers);
 		$('#wallet_send_fee').prop("disabled", (walletsCurrent.Type === 'EOS'));
-		
+
 		switch (walletsCurrent.Type) {
 			case 'XRP':
 				params = walletGetXrpCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
@@ -855,7 +925,8 @@ async function walletSelect(index) {
 				feeFractions = walletGetEthGasPriceFractions();
 
 				$('#wallet_gas_limit').val(params.gasLimit);
-				$('#wallet_eth_specific').show();
+				$('#wallet_eth_specific2').show();
+				walletEthShowTokens();
 				break;
 
 			case 'EOS':
@@ -879,23 +950,19 @@ async function walletSelect(index) {
 				break;
 		}
 
+		walletGetExchangeRate(walletsCurrent.Type);
 		walletGetBalance(walletsCurrent.Type, walletsCurrent.Addr, walletsCurrent.Options.Testnet, params.fractions);
 		walletGetFee(walletsCurrent.Type, walletsCurrent.Options.Testnet, feeFractions);
 
+		$('#wallet_type').text(params.name);
 		$('#wallet_send_fee_type').text(params.feeType);
 		$('#wallet_send_fee_name').text(params.feeName);
 		$('#wallet_send_coin_type').text(params.ticker);
 		$('#wallet_send_fee').val(Number((params.fee).toFixed(10)));
-
-		$('#wallet_type').text(params.name);
 		$('#wallet_img').attr('src', 'img/' + params.img);
-
 		walletShowQR(walletsCurrent.Addr);
-		walletGetExchangeRate(walletsCurrent.Type);
 
-		$('#section_wallet_key').hide();	
 		uiShowSection('wallets');
-		
 	} else {
 		generalSelect();
 	}
@@ -1035,6 +1102,8 @@ async function walletShowData() {
 
 async function walletGetExchangeRate(coin) {
 
+	walletCoinToUsd = 0;
+
 	$('#wallet_send_amount_btc')
 		.val('')
 		.unbind('input')
@@ -1050,6 +1119,8 @@ async function walletGetExchangeRate(coin) {
 		ret = bigNum(ret);
 
 		if (+ret != 0) {
+
+			walletCoinToUsd = ret;
 
 			$('#wallet_send_amount_btc').unbind('input').on('input', () => {
 
@@ -1072,6 +1143,10 @@ async function walletGetExchangeRate(coin) {
 					$('#wallet_send_amount_btc').val(bigNumToStr(bigNumDiv(amount, ret), 8));
 				}
 			});
+
+			if (walletCoinToUsd != 0 && walletBalance != 0) {
+				$('#wallet_balance').html(bigNumToStr(walletBalance, 18) + ' ' + coin + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' + bigNumToStr(bigNumMult(walletBalance, walletCoinToUsd), 2) + ' USD');
+			}
 		}
 	}).catch(() => null);
 }
@@ -1081,27 +1156,25 @@ async function walletGetExchangeRate(coin) {
 
 //-------------------------------------  Wallet  Utills  ------------------------------------------------------------------
 function walletBlockExplorer() {
-	let params;
+	
+	let url = false;
 
-	switch (walletsCurrent.Type) {
-		case 'XRP':
-			params = walletGetXrpCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
-			break;
-
-		case 'ETH':
-			params = walletGetEthCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
-			break;
-
-		case 'EOS':
-			params = walletGetEosCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
-			break;
-
-		default:
-			params = walletGetBtcCoinParameters(walletsCurrent.Type, walletsCurrent.Options.Testnet);
-			break;
+	if (walletsBlockExplorers && walletsBlockExplorers[walletsCurrent.Type]) {
+		if (walletsCurrent.Options.Testnet) {
+			if (walletsBlockExplorers[walletsCurrent.Type].TestNet)	{
+				url = walletsBlockExplorers[walletsCurrent.Type].TestNet;
+			}
+		} else {
+			if (walletsBlockExplorers[walletsCurrent.Type].MainNet) {
+				url = walletsBlockExplorers[walletsCurrent.Type].MainNet;
+			}
+		}
+		
+		if (url) {
+			url = url.replace(/%wallet_addr%/gi, walletsCurrent.Addr);
+			openExternalUrl(url);
+		}
 	}
-
-	openExternalUrl(params.explorer + walletsCurrent.Addr);
 }
 
 function walletCopyWif() {
@@ -1155,5 +1228,22 @@ function walletShowQR(addr) {
 
 	$('#wallet_qr').attr('d', q.path);
 	$('#wallet_viewbox').attr('viewBox', '0 0 ' + ++q.size + ' ' + q.size);
+}
+
+async function walletOnTestnet() {
+	if ($('#modal_wallet_testnet').is(':checked')) {
+		if (! await modalYesNo('Cancel', 'I do understand the risks', 'Attention', 'Testnet wallets are for test/learning purposes only. NEVER SEND REAL COINS TO IT !!!')) {
+			$('#modal_wallet_testnet').prop('checked', false);
+		}
+	}
+}
+
+async function walletGetBlockExplorers() {
+	
+	walletsBlockExplorers = false;
+
+	$.get(coinApiAddrGetBlockExplorers).then((data) => {
+		walletsBlockExplorers = data;
+	}).catch(() => null);
 }
 //-------------------------------------  Wallet  Utills  ------------------------------------------------------------------

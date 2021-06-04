@@ -7,9 +7,9 @@ const eosNumeric = require("eosjs/dist/eosjs-numeric");
 const eosApiAddrPushTx =	'https://wallet.security-arts.com/api/pushtx/';
 const eosApiAddrUnspent =	'https://wallet.security-arts.com/api/unspent/';
 
-const coinPrmEos = 			{name: 'EOS',			ticker: 'EOS',	fee: 0,	feeType: 'Fee', feeName: 'EOS',		img: 'eos.png',		fractions: 1,	explorer: 'https://bloks.io/account/'};
-const coinPrmEosTestNet = 	{name: 'EOS Testnet',	ticker: 'EOS',	fee: 0,	feeType: 'Fee',	feeName: 'EOS',		img: 'eos.png',		fractions: 1,	explorer: 'https://jungle.bloks.io/account/'};
-const coinPrmEosUnknown =	{name: 'Unknown',		ticker: '',		fee: 0,	feeType: '',	feeName: '',		img: 'none.png',	fractions: 1,	explorer: 'https://google.com/search?q='};
+const coinPrmEos = 			{name: 'EOS',			ticker: 'EOS',	fee: 0,	feeType: 'Fee', feeName: 'EOS',		img: 'eos.png',		fractions: 1};
+const coinPrmEosTestNet = 	{name: 'EOS Testnet',	ticker: 'EOS',	fee: 0,	feeType: 'Fee',	feeName: 'EOS',		img: 'eos.png',		fractions: 1};
+const coinPrmEosUnknown =	{name: 'Unknown',		ticker: '',		fee: 0,	feeType: '',	feeName: '',		img: 'none.png',	fractions: 1};
 
 const chainIdMainNet = 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906';
 const chainIdTestNet = 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473'; // Jungle Tesnet

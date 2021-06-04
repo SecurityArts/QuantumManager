@@ -62,6 +62,21 @@ function bigNumSub(a, b) {
 	return a;
 }
 
+function bigNumPow(a, b) {
+
+	try {
+		a = new Decimal(a);
+		b = new Decimal(b);
+	} catch (err) {
+		return 0;
+	}
+
+	a = a.pow(b);
+
+	if (a.toHexadecimal().length > 32) return 0;
+	return a;
+}
+
 function bigNum(a) {
 
 	let num;

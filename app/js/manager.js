@@ -1,8 +1,8 @@
 "use strict";
 
 const fs = require('fs');
+const got = require('got');
 const qr = require('qr-image');
-const request = require('request');
 const shell = require('electron').shell;
 const remote = require('electron').remote; 
 const ipc = require('electron').ipcRenderer;
@@ -103,33 +103,22 @@ function uiShowSection(section = '') {
 function downloadFile(fileURL, targetPath) {
 	return new Promise(function(resolve, reject) {
 
-		let total_bytes = 0;
-		let received_bytes = 0;
-
-		let req = request({
-			method: 'GET',
-			uri: fileURL
-		});
-
+		let ret = got.stream(fileURL);
 		let out = fs.createWriteStream(targetPath);
-		req.pipe(out);
 
-		req.on('response', function(data) {
-			total_bytes = parseInt(data.headers['content-length']);
+		ret.on('downloadProgress', ({percent, transferred, total}) => {
+			modalManagerUpdateDownloadProgress(transferred, total);
+		}).on('error', (error) => {
+			resolve(false);
 		});
 
-		req.on('data', function(chunk) {
-			received_bytes += chunk.length;
-			modalManagerUpdateDownloadProgress(received_bytes, total_bytes);
-		});
-
-		req.on('end', function() {
+		out.on('error', (error) => {
+			resolve(false);
+		}).on('finish', () => {
 			resolve(true);
 		});
 
-		req.on('error', function() {
-			resolve(false);
-		});
+		ret.pipe(out);
 	});
 }
 
@@ -528,7 +517,7 @@ $(document).ready(async () => {
 
 	settingsManagerReadLocalStore();
 
-	$('max-btn').on('click', () => {
+	$('#max-btn').on('click', () => {
 		if (!remote.getCurrentWindow().isMaximized()){
 			remote.getCurrentWindow().maximize();
 		} else {
@@ -567,6 +556,7 @@ $(document).ready(async () => {
 	uiCheckSoftwareUpdates(remote.app.getVersion());
 	$('#about_version').text(remote.app.getVersion());	
 
+	walletGetBlockExplorers();
 
 	hidInit(onConnect, onDisconnect, onConnectErr);
 	await hidFindDevice();
@@ -576,6 +566,10 @@ $(document).ready(async () => {
 	} else {
 		onDisconnect();
 	}
+	
+	$(function () {
+		$('[data-toggle="popover"]').popover()
+	});
 });
 //------------------------------------------------  Quantum Manager Main  --------------------------------------------------
 

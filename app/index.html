@@ -175,7 +175,7 @@
 																<div class="col-sm-10">
 																	<div class="form-group row">
 																		<div class="col-sm-1"><span class="panel-text">Name</span></div>
-																		<div class="col-sm-11"></span><span id="wallet_name" class="panel-value"></span></div>
+																		<div class="col-sm-11"><span id="wallet_name" class="panel-value"></span></div>
 																					
 																		<div class="col-sm-1"><span class="panel-text">Type</span></div>
 																		<div class="col-sm-11"><span id="wallet_type" class="panel-value"></span></div>
@@ -242,11 +242,15 @@
 																		<input id="wallet_send_fee" type="text" class="form-control form-control-sm" placeholder="Enter fee" aria-label="Enter fee">
 																		<div class="input-group-append">
 																			<span class="input-group-text" id="wallet_send_fee_name">sat/Byte</span>
+																			<button type="button" class="btn btn-lg btn-secondary" data-placement="bottom" data-toggle="popover" data-trigger="focus" title="Attention"
+																					data-content="The fee value is provided by a third-party service. Always double-check the fee before making any transaction. Too low fee can make you transaction stuck.">
+																				Info
+																			</button>
 																		</div>
 																	</div>
 																</div>
 																	
-																<div class="col-sm-5" id="wallet_eth_specific" class="hide">
+																<div class="col-sm-5" id="wallet_eth_specific2" class="hide">
 																	<div class="input-group input-group-sm mb-3">
 																		<input id="wallet_gas_limit" type="text" class="form-control form-control-sm" placeholder="Enter Gas Limit" aria-label="Enter Gas Limit">
 																		<div class="input-group-append">
@@ -285,8 +289,8 @@
 
 															<div class="form-group row">
 																<div class="col-sm-4">
-																	<button type="button" onclick="walletSend()"     		id="wallet_send_btn"  class="btn btn-info">Send</button>
-																	<button type="button" onclick="walletBlockExplorer()"	id="wallet_send_btn"  class="btn btn-info">Block Explorer</button>
+																	<button type="button" onclick="walletSend()"     		id="wallet_send_btn"		class="btn btn-info">Send</button>
+																	<button type="button" onclick="walletBlockExplorer()"	id="wallet_block_explorer"	class="btn btn-info">Block Explorer</button>
 																</div>
 
 																<div class="col-sm-5">
@@ -410,6 +414,38 @@
 																		<button type="button" onclick="walletEosCreateAcount()"	class="btn btn-info">Create acount</button>
 																	</div>
 																</div>
+															</div>
+															
+															<div id="wallet_eth_specific1" style="padding-top:5px">
+
+																<hr>
+
+																<div class="form-group row">
+																	<div class="col-sm-3">
+																		<span class="panel-text">Total tokens value </span>
+																		<span id="wallet_eth_tokens_total_usd" class="panel-value"></span>
+																	</div>
+																	<div class="col-sm-9">
+																		<span class="panel-text">Total tokens value </span>
+																		<span id="wallet_eth_tokens_total_eth" class="panel-value"></span>
+																	</div>
+																</div>
+
+																<table class="table-striped" id="table_eth_tokens">
+																	<thead>
+																		<tr>
+																			<th>#</th>
+																			<th><a href="#" style="color: #333333"><div>ERC-20 Token</div></a></th>
+																			<th><a href="#" style="color: #333333"><div>Symbol</div></a></th>
+																			<th><a href="#" style="color: #333333"><div>Quantity</div></a></th>
+																			<th><a href="#" style="color: #333333"><div>Token Price</div></a></th>
+																			<th><a href="#" style="color: #333333"><div>Value in USD</div></a></th>
+																			<th><a href="#" style="color: #333333"><div>Value in ETH</div></a></th>
+																		</tr>
+																	</thead>
+																	<tbody id="table_eth_tokens_data_body"></tbody>
+																</table>
+																
 															</div>
 														</div>
 															
@@ -601,27 +637,6 @@
 			</div>
 			
 			
-			<!-- Modal Yes/No-->
-			<div class="modal fade" id="modal_dialog_yes_no" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
-				<div class="modal-dialog modal-dialog-centered" role="document">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h4 class="modal-title" id="modal_yes_no_title">Modal title</h4>
-							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-								<span class="icon icon-cancel-squared"></span>
-							</button>
-						</div>
-						<div class="modal-body" id="modal_yes_no_text"></div>
-						<div class="modal-footer">
-							<button type="button" id="modal_yes_no_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
-							<button type="button" id="modal_yes_no_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
-						</div>
-					</div>
-				</div>
-			</div>
-			<!-- Modal Yes/No-->
-			
-			
 			<!-- Add user modal -->
 			<div class="modal fade" id="modal_add_user" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
 				<div class="modal-dialog modal-dialog-centered" role="document">
@@ -704,7 +719,7 @@
 								<label class="form-check-label" for="modal_wallet_segwit"> SegWit address</label>
 							</div-->
 							
-							<div class="form-check form-check-inline">
+							<div class="form-check form-check-inline" onchange="walletOnTestnet()">
 								<input class="form-check-input" type="checkbox" id="modal_wallet_testnet">
 								<label class="form-check-label" for="modal_wallet_testnet"> Testnet</label>
 							</div>
@@ -718,8 +733,29 @@
 				</div>
 			</div>
 			<!-- Add wallet modal -->
-			
-			
+
+
+			<!-- Modal Yes/No-->
+			<div class="modal fade" id="modal_dialog_yes_no" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="modal_yes_no_title">Modal title</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span class="icon icon-cancel-squared"></span>
+							</button>
+						</div>
+						<div class="modal-body" id="modal_yes_no_text"></div>
+						<div class="modal-footer">
+							<button type="button" id="modal_yes_no_ok" class="btn btn-info" data-dismiss="modal">Ok</button>
+							<button type="button" id="modal_yes_no_cancel" class="btn btn-info" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Modal Yes/No-->
+
+
 			<!-- EOS buy RAM modal -->
 			<div class="modal fade" id="modal_eos_buy_ram" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-backdrop="false">
 				<div class="modal-dialog modal-dialog-centered" role="document">
@@ -1411,7 +1447,7 @@
 								</div>
 								
 								<div class="col-sm-8">
-									<br>Security Arts 2018-2020
+									<br>Security Arts 2018-2021
 									<br>For more information please visit
 									<br><a href="#" onclick="openExternalUrl('https://security-arts.com')">www.security-arts.com</a>
 									<br>Quantum Manager version: <span id="about_version"></span>

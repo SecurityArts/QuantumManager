@@ -116,7 +116,7 @@ async function settingsBackup() {
 			if (!ret.Error) {
 				let fileName = await dialog.showSaveDialog({defaultPath: 'userdata.dat'});
 
-				if (fileName) {
+				if (fileName.filePath && !fileName.canceled) {
 					fs.writeFileSync(fileName.filePath, buff);
 				} else {
 					ret = false;
@@ -142,7 +142,7 @@ async function settingsRestore() {
 		let ret = false;
 		let fileName = await dialog.showOpenDialog({defaultPath: 'userdata.dat'});
 
-		if (fileName) {
+		if (fileName && !fileName.canceled && fileName.filePaths.length) {
 			let buff = fs.readFileSync(fileName.filePaths[0]);
 
 			if (buff && buff.length) {

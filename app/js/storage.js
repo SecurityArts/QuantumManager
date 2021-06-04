@@ -1,19 +1,19 @@
 "use strict";
 
-const electronStore = require('electron-store');
+const Store = require('electron-store');
 
 function storageGet(keyName = '') {
-	let store = new electronStore();
+	const store = new Store();
 	return store.get(keyName);
 }
 
 function storageSet(keyName = '', keyVal = '') {
-	let store = new electronStore();
+	let store = new Store ();
 	return store.set(keyName, keyVal);
 }
 
 function storageClear(keyName = '') {
-	let store = new electronStore();
+	let store = new Store ();
 	return store.delete(keyName);
 }
 
