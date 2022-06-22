@@ -74,7 +74,7 @@
   "eosjs": "^20.0.3",
   "ethereumjs-tx": "^2.1.2",
   "ethereumjs-util": "^7.0.1",
-  "got": "^11.8.2",
+  "got": "^11.8.5",
   "jquery": "^3.6.0",
   "node-hid": "^2.1.1",
   "photonkit": "^0.1.2",
